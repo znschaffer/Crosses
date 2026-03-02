@@ -13,9 +13,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
+        headerBackButtonDisplayMode: 'minimal',
         tabBarButton: HapticTab,
       }}
+      backBehavior="firstRoute"
     >
       <Tabs.Screen
         name="index"
@@ -23,6 +24,16 @@ export default function TabLayout() {
           title: 'Home',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="import"
+        options={{
+          title: 'Import',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="arrow.down.app.fill" color={color} />
           ),
         }}
       />
