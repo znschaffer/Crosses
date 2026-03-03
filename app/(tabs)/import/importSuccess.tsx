@@ -1,16 +1,30 @@
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { router } from 'expo-router'
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native'
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native'
 
 export default function ImportSuccessScreen() {
   const { state } = usePuzzle()
   const activePuzzle = state.puzzles[state.activePuzzleId ?? 0]
+  if (!activePuzzle) router.replace('/(tabs)')
   const clues =
     activePuzzle.puzzle.clues.across.length +
     activePuzzle.puzzle.clues.down.length
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        justifyContent: 'center',
+        gap: 24,
+        padding: 24,
+      }}
+    >
       <View style={styles.infoBox}>
         <View>
           <Text style={styles.puzzleTitle}>{activePuzzle.puzzle.title}</Text>
@@ -47,15 +61,13 @@ export default function ImportSuccessScreen() {
           Start Puzzle
         </Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    gap: 24,
     backgroundColor: '#f5f3ef',
   },
   puzzleTitle: {
