@@ -17,13 +17,6 @@ export default function ImportTabLayout() {
           headerBackTitle: 'Import',
         }}
       />
-      <Stack.Screen
-        name="importFail"
-        options={{
-          title: 'Input Fail',
-          headerBackTitle: 'Import',
-        }}
-      />
     </Stack>
   )
 }
