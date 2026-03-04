@@ -52,14 +52,14 @@ const styles = StyleSheet.create({
     marginBottom: -45,
   },
   title: {
-    fontSize: 45,
-    fontWeight: '700',
+    fontSize: 48,
+    fontFamily: 'Inter_700Bold',
     color: 'white',
     textAlign: 'center',
   },
   tagline: {
-    marginTop: 10,
-    fontSize: 16,
+    fontSize: 20,
+    fontFamily: 'Inter_400Regular',
     color: 'white',
     textAlign: 'center',
   },
