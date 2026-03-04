@@ -2,11 +2,11 @@ import { usePuzzle } from '@/contexts/PuzzleContext'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { router } from 'expo-router'
 import {
-  Text,
-  View,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 
 export default function ImportSuccessScreen() {
@@ -54,7 +54,7 @@ export default function ImportSuccessScreen() {
       </View>
       <TouchableOpacity
         style={styles.startPuzzleButton}
-        onPress={() => router.push('/(tabs)')}
+        onPress={() => router.navigate('/(tabs)')}
       >
         <Ionicons color="#fff" name="play"></Ionicons>
         <Text style={{ color: '#fff', fontSize: 16, fontWeight: 500 }}>

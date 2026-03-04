@@ -13,7 +13,7 @@ export default function ImportTabLayout() {
       <Stack.Screen
         name="importSuccess"
         options={{
-          title: 'Import Success',
+          title: '',
           headerBackTitle: 'Import',
         }}
       />

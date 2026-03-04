@@ -1,6 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { usePuzzleLoader } from '@/hooks/usePuzzleLoader'
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { openBrowserAsync } from 'expo-web-browser'
 import {
   ScrollView,
   StyleSheet,
@@ -49,6 +50,22 @@ export default function ImportScreen() {
               Visit any crossword site that offers downloadable puzzles —
               hundreds of free archives exist.
             </Text>
+            <View style={styles.linkPills}>
+              <TouchableOpacity
+                onPress={() =>
+                  openBrowserAsync('https://crosswordfiend.com/download/')
+                }
+                style={[styles.linkPill]}
+              >
+                <Text style={styles.linkText}>{'crosswordfiend.com'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => openBrowserAsync('https://crosshare.org/')}
+                style={[styles.linkPill]}
+              >
+                <Text style={styles.linkText}>{'crosshare.org'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
         <View style={styles.listItem}>
@@ -83,6 +100,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#fff',
     borderColor: '#99a1af',
+  },
+  linkPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  linkPill: {
+    borderRadius: 16,
+    backgroundColor: '#e2e8f0',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  linkText: {
+    fontSize: 10,
   },
   importButton: {
     backgroundColor: '#e87756',
