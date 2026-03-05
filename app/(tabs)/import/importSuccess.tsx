@@ -1,6 +1,7 @@
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { router } from 'expo-router'
+import { useEffect } from 'react'
 import {
   Text,
   View,
@@ -10,41 +11,52 @@ import {
 } from 'react-native'
 
 export default function ImportSuccessScreen() {
-  const { state } = usePuzzle()
-  const activePuzzle = state.puzzles[state.activePuzzleId ?? 0]
-  if (!activePuzzle) router.replace('/(tabs)')
-  const clues =
-    activePuzzle.puzzle.clues.across.length +
-    activePuzzle.puzzle.clues.down.length
+  const { activePuzzle } = usePuzzle()
+
+  // Redirect if there's no active puzzle — useEffect avoids rendering during nav
+  useEffect(() => {
+    if (!activePuzzle?.puzzle) {
+      router.replace('/(tabs)')
+    }
+  }, [activePuzzle])
+
+  // Guard for the render — show nothing while redirecting
+  if (!activePuzzle?.puzzle) return null
+
+  const { puzzle } = activePuzzle
+  const acrossClues = Array.isArray(puzzle.clues?.across)
+    ? puzzle.clues.across
+    : []
+  const downClues = Array.isArray(puzzle.clues?.down) ? puzzle.clues.down : []
+  const clueCount = acrossClues.length + downClues.length
+
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{
-        justifyContent: 'center',
-        gap: 24,
-        padding: 24,
-      }}
+      contentContainerStyle={{ justifyContent: 'center', gap: 24, padding: 24 }}
     >
       <View style={styles.infoBox}>
         <View>
-          <Text style={styles.puzzleTitle}>{activePuzzle.puzzle.title}</Text>
-          <Text style={styles.puzzleAuthor}>{activePuzzle.puzzle.author}</Text>
+          <Text style={styles.puzzleTitle}>{puzzle.title ?? 'Untitled'}</Text>
+          <Text style={styles.puzzleAuthor}>{puzzle.author ?? ''}</Text>
         </View>
+
         <View style={styles.puzzleStats}>
           <View style={styles.puzzleStat}>
-            <Text style={styles.puzzleStatValue}>{clues}</Text>
+            <Text style={styles.puzzleStatValue}>{clueCount}</Text>
             <Text style={styles.puzzleStatText}>CLUES</Text>
           </View>
           <View style={styles.puzzleStat}>
             <Text style={styles.puzzleStatValue}>
-              ~{Math.floor(clues * 0.2)}
+              ~{Math.floor(clueCount * 0.2)}
             </Text>
             <Text style={styles.puzzleStatText}>MIN EST.</Text>
           </View>
         </View>
+
         <View style={styles.puzzleClues}>
-          <Text style={{ fontSize: 12, fontWeight: 700 }}>A Few Clues</Text>
-          {activePuzzle.puzzle.clues.across.slice(0, 6).map((clue) => (
+          <Text style={{ fontSize: 12, fontWeight: '700' }}>A Few Clues</Text>
+          {acrossClues.slice(0, 6).map((clue) => (
             <View style={styles.puzzleClue} key={clue.number}>
               <Text style={styles.puzzleClueNumber}>{clue.number}</Text>
               <Text style={styles.puzzleClueText}>{clue.text}</Text>
@@ -52,12 +64,13 @@ export default function ImportSuccessScreen() {
           ))}
         </View>
       </View>
+
       <TouchableOpacity
         style={styles.startPuzzleButton}
         onPress={() => router.push('/(tabs)')}
       >
-        <Ionicons color="#fff" name="play"></Ionicons>
-        <Text style={{ color: '#fff', fontSize: 16, fontWeight: 500 }}>
+        <Ionicons color="#fff" name="play" />
+        <Text style={{ color: '#fff', fontSize: 16, fontWeight: '500' }}>
           Start Puzzle
         </Text>
       </TouchableOpacity>
@@ -72,12 +85,12 @@ const styles = StyleSheet.create({
   },
   puzzleTitle: {
     fontSize: 24,
-    fontWeight: 700,
+    fontWeight: '700',
     color: '#0a0a0a',
   },
   puzzleAuthor: {
     fontSize: 14,
-    fontWeight: 400,
+    fontWeight: '400',
     color: '#4a5565',
   },
   puzzleStats: {
@@ -91,7 +104,6 @@ const styles = StyleSheet.create({
   },
   startPuzzleButton: {
     backgroundColor: '#e87756',
-    display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -116,7 +128,7 @@ const styles = StyleSheet.create({
     color: '#e87756',
     width: 24,
     fontSize: 14,
-    fontWeight: 700,
+    fontWeight: '700',
   },
   puzzleClueText: {
     fontSize: 14,
@@ -128,7 +140,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   puzzleStatValue: {
-    fontWeight: 700,
+    fontWeight: '700',
     fontSize: 30,
     textAlign: 'center',
   },

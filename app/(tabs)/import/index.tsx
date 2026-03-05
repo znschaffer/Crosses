@@ -15,11 +15,7 @@ export default function ImportScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{
-        justifyContent: 'center',
-        gap: 24,
-        padding: 24,
-      }}
+      contentContainerStyle={{ justifyContent: 'center', gap: 24, padding: 24 }}
     >
       <View style={styles.importBox}>
         <View style={styles.iconBox}>
@@ -34,15 +30,15 @@ export default function ImportScreen() {
           style={styles.importButton}
           onPress={handleLoadPuzzle}
         >
-          <Text style={styles.importButtonText}> Browse Files</Text>
+          <Text style={styles.importButtonText}>Browse Files</Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.infoBox}>
-        <Text style={{ fontSize: 18, fontWeight: 700 }}>
-          How to get puzzle files
-        </Text>
+        <Text style={styles.infoHeading}>How to get puzzle files</Text>
+
         <View style={styles.listItem}>
-          <FontAwesome6 color="grey" size={16} padding={4} name="1" />
+          <FontAwesome6 color="grey" size={16} name="1" />
           <View style={{ gap: 4 }}>
             <Text style={styles.listHeader}>Find a puzzle online</Text>
             <Text style={styles.listText}>
@@ -51,8 +47,9 @@ export default function ImportScreen() {
             </Text>
           </View>
         </View>
+
         <View style={styles.listItem}>
-          <FontAwesome6 color="grey" size={16} padding={4} name="2" />
+          <FontAwesome6 color="grey" size={16} name="2" />
           <View style={{ gap: 4 }}>
             <Text style={styles.listHeader}>Download the .puz file</Text>
             <Text style={styles.listText}>
@@ -61,8 +58,9 @@ export default function ImportScreen() {
             </Text>
           </View>
         </View>
+
         <View style={styles.listItem}>
-          <FontAwesome6 color="grey" size={16} padding={4} name="3" />
+          <FontAwesome6 color="grey" size={16} name="3" />
           <View style={{ gap: 4 }}>
             <Text style={styles.listHeader}>Open with Crosses</Text>
             <Text style={styles.listText}>
@@ -77,55 +75,9 @@ export default function ImportScreen() {
 }
 
 const styles = StyleSheet.create({
-  iconBox: {
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 16,
-    backgroundColor: '#fff',
-    borderColor: '#99a1af',
-  },
-  importButton: {
-    backgroundColor: '#e87756',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-  },
-  listItem: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  listHeader: {
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#0a0a0a',
-  },
-  listText: {
-    fontSize: 14,
-    fontWeight: 400,
-    color: '#4a5565',
-  },
-  importButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 500,
-    textAlign: 'center',
-  },
-  heading: {
-    color: '#0a0a0a',
-    textAlign: 'center',
-    fontFamily: 'Inter',
-    fontSize: 20,
-    fontWeight: 700,
-  },
-  paragraph: {
-    textAlign: 'center',
-    fontWeight: 400,
-    fontSize: 14,
-    color: '#4A5565',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f3ef',
   },
   importBox: {
     backgroundColor: '#fdf2f8',
@@ -137,6 +89,39 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
   },
+  iconBox: {
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderColor: '#99a1af',
+  },
+  heading: {
+    color: '#0a0a0a',
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  paragraph: {
+    textAlign: 'center',
+    fontWeight: '400',
+    fontSize: 14,
+    color: '#4A5565',
+  },
+  importButton: {
+    backgroundColor: '#e87756',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+  },
+  importButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
   infoBox: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -145,15 +130,23 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: '#fff',
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f3ef',
+  infoHeading: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  header: {
+  listItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: '8',
-    width: '100%',
+    gap: 16,
+    alignSelf: 'stretch',
+  },
+  listHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0a0a0a',
+  },
+  listText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#4a5565',
   },
 })
