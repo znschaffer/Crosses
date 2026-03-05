@@ -29,6 +29,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="grid"
+        options={{
+          title: 'Grid',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="play" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="import"
         options={{
           title: 'Import',

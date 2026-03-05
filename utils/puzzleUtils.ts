@@ -26,6 +26,5 @@ export async function extractPuzzleData(uri: string, filename: string) {
   const file = new File(uri)
   const bytes = await file.bytes()
   const binaryBuffer = Buffer.from(bytes)
-
-  return parse(binaryBuffer, { filename })
+  return binaryBuffer
 }

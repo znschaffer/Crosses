@@ -16,7 +16,8 @@ export default function GridScreen() {
 
   // Key ensures GridInner remounts when a different puzzle is activated,
   // so its local state initializes cleanly.
-  const key = activePuzzle.puzzle.title ?? activePuzzle.startedAt ?? 'puzzle'
+  const key =
+    activePuzzle.puzzle.meta.title ?? activePuzzle.startedAt ?? 'puzzle'
 
   return <GridInner key={key} puzzleState={activePuzzle} />
 }

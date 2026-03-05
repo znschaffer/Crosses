@@ -7,17 +7,16 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Platform,
 } from 'react-native'
-import type { Puzzle } from '@xwordly/xword-parser'
+import type { CrosswordJSON } from 'xd-crossword-tools'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Direction = 'across' | 'down'
 
 export interface ClueBarProps {
-  puzzle: Puzzle
-  /** Pre-computed from GridInner's wordMap — avoids re-deriving clue numbers */
+  puzzle: CrosswordJSON
+  /** Pre-computed from GridInner's wordMap — single source of truth */
   activeClueNumber: number | null
   direction: Direction
   onNavigateClue: (clueNumber: number, direction: Direction) => void
@@ -33,17 +32,19 @@ interface ClueEntry {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Extract a flat sorted list of clues for one direction from the puzzle.
- * xword-parser returns Clue[] = { number, text }[] already in reading order.
+ * xd-crossword-tools clues shape:
+ *   puzzle.clues.across[n] = { number, body, answer, position, tiles, ... }
+ *   puzzle.clues.down[n]   = same
+ * `body` is the clue text.
  */
-function extractClues(puzzle: Puzzle, dir: Direction): ClueEntry[] {
+function extractClues(puzzle: CrosswordJSON, dir: Direction): ClueEntry[] {
   const raw = dir === 'across' ? puzzle.clues?.across : puzzle.clues?.down
   if (!Array.isArray(raw)) return []
   return raw
-    .filter((c) => c?.number != null && c?.text != null)
+    .filter((c) => c?.number != null && c?.body != null)
     .map((c) => ({
       number: Number(c.number),
-      text: String(c.text),
+      text: String(c.body),
       direction: dir,
     }))
 }
@@ -79,13 +80,10 @@ function ClueModal({
     >
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.modalSheet} onPress={() => {}}>
-          {/* Handle bar */}
           <View style={styles.modalHandle} />
-
           <Text style={styles.modalTitle}>
             {direction === 'across' ? 'Across' : 'Down'}
           </Text>
-
           <ScrollView
             ref={scrollRef}
             style={styles.modalScroll}
@@ -119,7 +117,6 @@ function ClueModal({
                 </TouchableOpacity>
               )
             })}
-            {/* bottom breathing room above keyboard */}
             <View style={{ height: 32 }} />
           </ScrollView>
         </Pressable>
@@ -139,42 +136,38 @@ export default function ClueBar({
 }: ClueBarProps) {
   const [modalVisible, setModalVisible] = useState(false)
 
-  // Build clue lists once per puzzle
   const acrossClues = useMemo(() => extractClues(puzzle, 'across'), [puzzle])
   const downClues = useMemo(() => extractClues(puzzle, 'down'), [puzzle])
   const activeClues = direction === 'across' ? acrossClues : downClues
 
-  // activeClueNumber comes pre-computed from GridInner's wordMap
   const activeEntry = useMemo(
     () => activeClues.find((c) => c.number === activeClueNumber) ?? null,
     [activeClues, activeClueNumber]
   )
-
   const activeIndex = useMemo(
     () => activeClues.findIndex((c) => c.number === activeClueNumber),
     [activeClues, activeClueNumber]
   )
 
-  // Prev / next clue navigation
-  const handlePrev = useCallback(() => {
-    if (activeIndex <= 0) return
-    const prev = activeClues[activeIndex - 1]
-    onNavigateClue(prev.number, direction)
-  }, [activeClues, activeIndex, direction, onNavigateClue])
-
-  const handleNext = useCallback(() => {
-    if (activeIndex < 0 || activeIndex >= activeClues.length - 1) return
-    const next = activeClues[activeIndex + 1]
-    onNavigateClue(next.number, direction)
-  }, [activeClues, activeIndex, direction, onNavigateClue])
-
   const hasPrev = activeIndex > 0
   const hasNext = activeIndex >= 0 && activeIndex < activeClues.length - 1
+
+  const handlePrev = useCallback(() => {
+    if (!hasPrev) return
+    const prev = activeClues[activeIndex - 1]
+    onNavigateClue(prev.number, direction)
+  }, [activeClues, activeIndex, direction, hasPrev, onNavigateClue])
+
+  const handleNext = useCallback(() => {
+    if (!hasNext) return
+    const next = activeClues[activeIndex + 1]
+    onNavigateClue(next.number, direction)
+  }, [activeClues, activeIndex, direction, hasNext, onNavigateClue])
 
   return (
     <>
       <View style={styles.bar}>
-        {/* ── Left: prev arrow ── */}
+        {/* Prev */}
         <TouchableOpacity
           onPress={handlePrev}
           disabled={!hasPrev}
@@ -186,7 +179,7 @@ export default function ClueBar({
           </Text>
         </TouchableOpacity>
 
-        {/* ── Centre: clue number badge + text ── */}
+        {/* Clue text */}
         <TouchableOpacity
           style={styles.clueArea}
           onPress={() => setModalVisible(true)}
@@ -213,7 +206,7 @@ export default function ClueBar({
           )}
         </TouchableOpacity>
 
-        {/* ── Right: direction toggle + next arrow ── */}
+        {/* Direction toggle */}
         <TouchableOpacity
           onPress={onToggleDirection}
           style={styles.dirBtn}
@@ -224,6 +217,7 @@ export default function ClueBar({
           </Text>
         </TouchableOpacity>
 
+        {/* Next */}
         <TouchableOpacity
           onPress={handleNext}
           disabled={!hasNext}
@@ -236,7 +230,6 @@ export default function ClueBar({
         </TouchableOpacity>
       </View>
 
-      {/* ── Full clue list modal ── */}
       <ClueModal
         visible={modalVisible}
         clues={activeClues}
@@ -254,7 +247,6 @@ export default function ClueBar({
 const BAR_HEIGHT = 44
 
 const styles = StyleSheet.create({
-  // ── Clue bar ────────────────────────────────────────────────────────────────
   bar: {
     height: BAR_HEIGHT,
     flexDirection: 'row',
@@ -266,30 +258,16 @@ const styles = StyleSheet.create({
     borderBottomColor: '#c8c8cc',
     paddingHorizontal: 4,
   },
-  arrowBtn: {
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  arrowBtn: { width: 36, alignItems: 'center', justifyContent: 'center' },
   arrowText: {
     fontSize: 28,
     lineHeight: 32,
     color: '#1976D2',
     fontWeight: '300',
   },
-  arrowDisabled: {
-    color: '#c0c0c8',
-  },
-  clueArea: {
-    flex: 1,
-    paddingHorizontal: 6,
-    justifyContent: 'center',
-  },
-  clueInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  arrowDisabled: { color: '#c0c0c8' },
+  clueArea: { flex: 1, paddingHorizontal: 6, justifyContent: 'center' },
+  clueInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   clueBadge: {
     backgroundColor: '#1976D2',
     borderRadius: 4,
@@ -303,28 +281,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.3,
   },
-  clueText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#1a1a1a',
-    fontWeight: '500',
-  },
-  clueTextEmpty: {
-    fontSize: 14,
-    color: '#aaa',
-    textAlign: 'center',
-  },
-  dirBtn: {
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dirBtnText: {
-    fontSize: 18,
-    color: '#1976D2',
-  },
-
-  // ── Modal ───────────────────────────────────────────────────────────────────
+  clueText: { flex: 1, fontSize: 14, color: '#1a1a1a', fontWeight: '500' },
+  clueTextEmpty: { fontSize: 14, color: '#aaa', textAlign: 'center' },
+  dirBtn: { width: 36, alignItems: 'center', justifyContent: 'center' },
+  dirBtnText: { fontSize: 18, color: '#1976D2' },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -336,12 +296,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     maxHeight: '60%',
     paddingTop: 8,
-    // iOS shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
-    // Android elevation
     elevation: 12,
   },
   modalHandle: {
@@ -361,9 +319,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
-  modalScroll: {
-    paddingHorizontal: 16,
-  },
+  modalScroll: { paddingHorizontal: 16 },
   modalRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -385,17 +341,7 @@ const styles = StyleSheet.create({
     paddingTop: 1,
     flexShrink: 0,
   },
-  modalNumActive: {
-    color: '#1976D2',
-  },
-  modalClueText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1a1a1a',
-    lineHeight: 20,
-  },
-  modalClueTextActive: {
-    fontWeight: '600',
-    color: '#1976D2',
-  },
+  modalNumActive: { color: '#1976D2' },
+  modalClueText: { flex: 1, fontSize: 15, color: '#1a1a1a', lineHeight: 20 },
+  modalClueTextActive: { fontWeight: '600', color: '#1976D2' },
 })

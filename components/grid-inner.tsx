@@ -12,28 +12,26 @@ import {
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
 } from 'react-native'
-import type { Puzzle } from '@xwordly/xword-parser'
+import type { CrosswordJSON } from 'xd-crossword-tools'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { PuzzleState } from '@/types/PuzzleState.t'
 import ClueBar from './cluebar'
 import { useHeaderHeight } from '@react-navigation/elements'
 
-// ─── Layout constants ────────────────────────────────────────────────────────
-const GRID_PADDING = 8
+// ─── Layout constants ─────────────────────────────────────────────────────────
 const MIN_CELL_SIZE = 20
 const MAX_CELL_SIZE = 64
 const GRID_HEIGHT_FRACTION = 0.55
 const HORIZONTAL_MARGIN = 32
 const SYNC_DEBOUNCE_MS = 700
 
-// ─── Colours ─────────────────────────────────────────────────────────────────
+// ─── Colours ──────────────────────────────────────────────────────────────────
 const COLOR = {
   black: '#1a1a1a',
   white: '#ffffff',
-  border: '#444444',
-  activeCellBg: '#f7da21', // selected cell — bright yellow (NYT-style)
-  activeWordBg: '#a7d8f0', // rest of the active word — light blue
-  circleBg: 'transparent',
+  border: '#c0c0c0',
+  activeCellBg: '#f7da21',
+  activeWordBg: '#a7d8f0',
   circleStroke: '#888888',
   correct: '#d4edda',
   incorrect: '#f8d7da',
@@ -41,25 +39,39 @@ const COLOR = {
   letterText: '#1a1a1a',
 } as const
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 type Direction = 'across' | 'down'
 
 interface WordMap {
-  // Maps every (r,c) → { acrossWord: number|null, downWord: number|null }
-  // where the number is the clue number that starts the word
   acrossClue: (number | null)[][]
   downClue: (number | null)[][]
 }
 
 interface CellState {
   letter: string
-  isCorrect: boolean | null // null = unchecked
+  isCorrect: boolean | null
 }
 
 type Props = {
   puzzleState: PuzzleState
-  /** Jump to a specific clue number + direction from ClueBar navigation */
   onNavigateClue?: (clueNumber: number, direction: Direction) => void
+}
+
+// ─── Grid helpers ─────────────────────────────────────────────────────────────
+
+function isBlank(puzzle: CrosswordJSON, r: number, c: number): boolean {
+  return puzzle.tiles[r]?.[c]?.type === 'blank'
+}
+
+function getTileLetter(puzzle: CrosswordJSON, r: number, c: number): string {
+  const t = puzzle.tiles[r]?.[c]
+  return t?.type === 'letter' ? t.letter : ''
+}
+
+function getGridDimensions(puzzle: CrosswordJSON) {
+  const height = puzzle.tiles.length
+  const width = puzzle.tiles[0]?.length ?? 0
+  return { width, height }
 }
 
 // ─── Pre-compute helpers ──────────────────────────────────────────────────────
@@ -67,17 +79,12 @@ type Props = {
 /**
  * Build lookup maps: acrossClue[r][c] and downClue[r][c] → clue number | null.
  *
- * cell.number in xword-parser is a sequential cell index (1, 2, 3...), NOT
- * the crossword clue number. The actual clue numbers live in
- * puzzle.clues.across[n].number / puzzle.clues.down[n].number.
- *
- * The .puz format stores clues as a flat list in reading order with no numbers
- * in the binary — xword-parser derives the numbers by walking the grid the
- * same way we do here. So we walk in identical reading order and consume the
- * next clue from each array at each word start, giving us the correct number.
+ * xd-crossword-tools gives us each clue's exact start position and tile count,
+ * so we stamp the clue number on every cell in the word directly — no geometry
+ * guessing, no grid walking required.
  */
-function buildWordMap(puzzle: Puzzle): WordMap {
-  const { width, height, cells } = puzzle.grid
+function buildWordMap(puzzle: CrosswordJSON): WordMap {
+  const { width, height } = getGridDimensions(puzzle)
 
   const acrossClue: (number | null)[][] = Array.from({ length: height }, () =>
     new Array(width).fill(null)
@@ -86,47 +93,22 @@ function buildWordMap(puzzle: Puzzle): WordMap {
     new Array(width).fill(null)
   )
 
-  const acrossClues = Array.isArray(puzzle.clues?.across)
-    ? puzzle.clues.across
-    : []
-  const downClues = Array.isArray(puzzle.clues?.down) ? puzzle.clues.down : []
-  let acrossIdx = 0
-  let downIdx = 0
-
-  for (let r = 0; r < height; r++) {
-    for (let c = 0; c < width; c++) {
-      if (cells[r][c].isBlack) continue
-
-      const startsAcross =
-        (c === 0 || cells[r][c - 1].isBlack) &&
-        c < width - 1 &&
-        !cells[r][c + 1].isBlack
-
-      const startsDown =
-        (r === 0 || cells[r - 1][c].isBlack) &&
-        r < height - 1 &&
-        !cells[r + 1][c].isBlack
-
-      // Both across and down can start at the same cell. Each pulls from its
-      // own independent ordered list, so they don't interfere with each other.
-      if (startsAcross && acrossIdx < acrossClues.length) {
-        const num = acrossClues[acrossIdx].number
-        acrossIdx++
-        let cc = c
-        while (cc < width && !cells[r][cc].isBlack) {
-          acrossClue[r][cc] = num
-          cc++
-        }
+  for (const clue of puzzle.clues?.across ?? []) {
+    const r = clue.position.index
+    const c = clue.position.col
+    for (let i = 0; i < clue.tiles.length; i++) {
+      if (r < height && c + i < width) {
+        acrossClue[r][c + i] = clue.number
       }
+    }
+  }
 
-      if (startsDown && downIdx < downClues.length) {
-        const num = downClues[downIdx].number
-        downIdx++
-        let rr = r
-        while (rr < height && !cells[rr][c].isBlack) {
-          downClue[rr][c] = num
-          rr++
-        }
+  for (const clue of puzzle.clues?.down ?? []) {
+    const r = clue.position.index
+    const c = clue.position.col
+    for (let i = 0; i < clue.tiles.length; i++) {
+      if (r + i < height && c < width) {
+        downClue[r + i][c] = clue.number
       }
     }
   }
@@ -134,163 +116,136 @@ function buildWordMap(puzzle: Puzzle): WordMap {
   return { acrossClue, downClue }
 }
 
-/**
- * Return the clue number for the word the selected cell belongs to.
- * Reads directly from the pre-computed wordMap — no geometry re-derivation.
- */
 function getActiveClueNumber(
   idx: number,
   dir: Direction,
-  puzzle: Puzzle,
+  puzzle: CrosswordJSON,
   wordMap: WordMap
 ): number | null {
-  const { width } = puzzle.grid
+  const { width } = getGridDimensions(puzzle)
   const r = Math.floor(idx / width)
   const c = idx % width
   return dir === 'across' ? wordMap.acrossClue[r][c] : wordMap.downClue[r][c]
 }
 
 /**
- * Given a cell (r, c) and direction, return ALL flat indices that form that word.
- * Derived purely from black-cell geometry.
+ * Return all flat indices forming the word that contains (r, c) in direction dir.
+ * Derived from black-cell geometry — consistent with how xd-crossword-tools lays
+ * out tiles.
  */
 function getWordIndices(
   r: number,
   c: number,
   dir: Direction,
-  puzzle: Puzzle
+  puzzle: CrosswordJSON
 ): number[] {
-  const { width, height, cells } = puzzle.grid
+  const { width, height } = getGridDimensions(puzzle)
   const result: number[] = []
 
   if (dir === 'across') {
     let start = c
-    while (start > 0 && !cells[r][start - 1].isBlack) start--
+    while (start > 0 && !isBlank(puzzle, r, start - 1)) start--
     let end = c
-    while (end < width - 1 && !cells[r][end + 1].isBlack) end++
+    while (end < width - 1 && !isBlank(puzzle, r, end + 1)) end++
     for (let cc = start; cc <= end; cc++) result.push(r * width + cc)
   } else {
     let start = r
-    while (start > 0 && !cells[start - 1][c].isBlack) start--
+    while (start > 0 && !isBlank(puzzle, start - 1, c)) start--
     let end = r
-    while (end < height - 1 && !cells[end + 1][c].isBlack) end++
+    while (end < height - 1 && !isBlank(puzzle, end + 1, c)) end++
     for (let rr = start; rr <= end; rr++) result.push(rr * width + c)
   }
 
   return result
 }
 
-/**
- * Advance to the next white cell in the current word. If at the word boundary,
- * stay. Skips black cells.
- */
-function advanceInWord(idx: number, dir: Direction, puzzle: Puzzle): number {
-  const { width, height, cells } = puzzle.grid
+function advanceInWord(
+  idx: number,
+  dir: Direction,
+  puzzle: CrosswordJSON
+): number {
+  const { width, height } = getGridDimensions(puzzle)
   const r = Math.floor(idx / width)
   const c = idx % width
-
   if (dir === 'across') {
     const nc = c + 1
-    if (nc < width && !cells[r][nc].isBlack) return r * width + nc
+    if (nc < width && !isBlank(puzzle, r, nc)) return r * width + nc
   } else {
     const nr = r + 1
-    if (nr < height && !cells[nr][c].isBlack) return nr * width + c
+    if (nr < height && !isBlank(puzzle, nr, c)) return nr * width + c
   }
   return idx
 }
 
-/**
- * Retreat one cell within the current word. Returns same idx if at word start.
- */
-function retreatInWord(idx: number, dir: Direction, puzzle: Puzzle): number {
-  const { width, cells } = puzzle.grid
+function retreatInWord(
+  idx: number,
+  dir: Direction,
+  puzzle: CrosswordJSON
+): number {
+  const { width } = getGridDimensions(puzzle)
   const r = Math.floor(idx / width)
   const c = idx % width
-
   if (dir === 'across') {
     const nc = c - 1
-    if (nc >= 0 && !cells[r][nc].isBlack) return r * width + nc
+    if (nc >= 0 && !isBlank(puzzle, r, nc)) return r * width + nc
   } else {
     const nr = r - 1
-    if (nr >= 0 && !cells[nr][c].isBlack) return nr * width + c
+    if (nr >= 0 && !isBlank(puzzle, nr, c)) return nr * width + c
   }
   return idx
 }
 
-/**
- * Full backspace retreat:
- * 1. If current cell has a letter → stay, caller will clear it.
- * 2. If current cell is empty and not at word start → move back one cell.
- * 3. If at word start → jump to the last cell of the previous word (in reading
- *    order) that belongs to the same direction.
- *
- * Returns { nextIdx, shouldClear } where shouldClear means the target cell's
- * letter should be erased.
- */
 function retreatSelection(
   idx: number,
   dir: Direction,
   cellStates: CellState[],
-  puzzle: Puzzle
+  puzzle: CrosswordJSON
 ): { nextIdx: number; shouldClear: boolean } {
-  const { width, height, cells } = puzzle.grid
+  const { width, height } = getGridDimensions(puzzle)
 
-  // Case 1: current cell has a letter — just erase in place
+  // Case 1: current cell has a letter — erase in place
   if (cellStates[idx]?.letter) {
     return { nextIdx: idx, shouldClear: true }
   }
 
-  // Case 2: try to step back within the same word
-  const withinWord = retreatInWord(idx, dir, puzzle)
-  if (withinWord !== idx) {
-    return { nextIdx: withinWord, shouldClear: true }
+  // Case 2: step back within the word
+  const within = retreatInWord(idx, dir, puzzle)
+  if (within !== idx) {
+    return { nextIdx: within, shouldClear: true }
   }
 
-  // Case 3: at the start of a word — find the previous word in reading order
-  // Scan backwards through all cells
+  // Case 3: at word start — jump to last cell of previous word
   for (let probe = idx - 1; probe >= 0; probe--) {
     const pr = Math.floor(probe / width)
     const pc = probe % width
-    if (cells[pr][pc].isBlack) continue
+    if (isBlank(puzzle, pr, pc)) continue
 
     const isWordEnd =
       dir === 'across'
-        ? pc === width - 1 || cells[pr][pc + 1].isBlack
-        : pr === height - 1 || cells[pr + 1][pc].isBlack
+        ? pc === width - 1 || isBlank(puzzle, pr, pc + 1)
+        : pr === height - 1 || isBlank(puzzle, pr + 1, pc)
 
     if (isWordEnd) {
-      // Confirm this cell actually belongs to a word in the right direction
-      const hasClue =
-        dir === 'across'
-          ? !(pc === 0 || cells[pr][pc - 1].isBlack) || // mid-word is fine
-            (pc < width - 1 && !cells[pr][pc + 1].isBlack) // single-cell guard
-          : !(pr === 0 || cells[pr - 1][pc].isBlack) ||
-            (pr < height - 1 && !cells[pr + 1][pc].isBlack)
-
-      // A simpler check: the word must be at least 2 cells long
       const wordCells = getWordIndices(pr, pc, dir, puzzle)
       if (wordCells.length < 2) continue
-
-      // Land on the last cell of that word
-      const lastCell = wordCells[wordCells.length - 1]
-      return { nextIdx: lastCell, shouldClear: true }
+      return { nextIdx: wordCells[wordCells.length - 1], shouldClear: true }
     }
   }
 
   return { nextIdx: idx, shouldClear: false }
 }
 
-/**
- * Check puzzle completion — every non-black cell matches the solution.
- */
-function checkComplete(cellStates: CellState[], puzzle: Puzzle): boolean {
-  const { width, height, cells } = puzzle.grid
+function checkComplete(
+  cellStates: CellState[],
+  puzzle: CrosswordJSON
+): boolean {
+  const { width, height } = getGridDimensions(puzzle)
   for (let r = 0; r < height; r++) {
     for (let c = 0; c < width; c++) {
-      const def = cells[r][c]
-      if (def.isBlack) continue
+      if (isBlank(puzzle, r, c)) continue
       const state = cellStates[r * width + c]
-      if (!state?.letter || state.letter !== def.solution) return false
+      const solution = getTileLetter(puzzle, r, c)
+      if (!state?.letter || state.letter !== solution) return false
     }
   }
   return true
@@ -407,11 +362,11 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const { updateActivePuzzle } = usePuzzle()
   const window = useWindowDimensions()
 
-  const puzzle = puzzleState.puzzle as Puzzle
-  const { width, height, cells } = puzzle.grid
+  const puzzle = puzzleState.puzzle
+  const { width, height } = getGridDimensions(puzzle)
   const total = width * height
 
-  // ── Responsive sizing ──────────────────────────────────────────────────────
+  // ── Sizing ────────────────────────────────────────────────────────────────
   const maxGridWidth = Math.max(100, window.width - HORIZONTAL_MARGIN)
   const maxGridHeight = Math.max(100, window.height * GRID_HEIGHT_FRACTION)
   const cellSize = Math.max(
@@ -424,13 +379,13 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       )
     )
   )
-  const gridPixelWidth = width * cellSize + 1 // +1 for the left edge border
-  const gridPixelHeight = height * cellSize + 1 // +1 for the top edge border
+  const gridPixelWidth = width * cellSize + 1
+  const gridPixelHeight = height * cellSize + 1
 
-  // ── Pre-computed word map (stable for this puzzle) ─────────────────────────
+  // ── Word map ──────────────────────────────────────────────────────────────
   const wordMap = useMemo(() => buildWordMap(puzzle), [puzzle])
 
-  // ── Local state ────────────────────────────────────────────────────────────
+  // ── Local state ───────────────────────────────────────────────────────────
   const initCellStates = (answers?: string[]): CellState[] => {
     const base = Array.isArray(answers) ? answers : []
     return Array.from({ length: total }, (_, i) => ({
@@ -450,35 +405,26 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   )
   const [isPuzzleComplete, setIsPuzzleComplete] = useState(false)
 
-  // ── Sync in from context (only when puzzle identity changes) ───────────────
-  // We use a ref to track whether a context update originated from us, so we
-  // don't clobber in-progress edits.
-  const isSyncingRef = useRef(false)
-  const getPuzzleId = (p: Puzzle) =>
-    `${p.title ?? ''}::${p.author ?? ''}::${p.grid.width}x${p.grid.height}`
+  // ── Puzzle identity reset ─────────────────────────────────────────────────
+  const getPuzzleId = (p: CrosswordJSON) =>
+    `${p.meta?.title ?? ''}::${p.meta?.author ?? ''}::${p.tiles.length}x${p.tiles[0]?.length ?? 0}`
   const puzzleIdRef = useRef(getPuzzleId(puzzle))
 
   useEffect(() => {
     const newId = getPuzzleId(puzzle)
     if (newId !== puzzleIdRef.current) {
-      // Different puzzle loaded — reset everything
       puzzleIdRef.current = newId
       setCellStates(initCellStates(puzzleState.userAnswers))
       setSelectedIndex(puzzleState.currentIndex ?? 0)
       setSelectedDirection((puzzleState.direction as Direction) ?? 'across')
       setIsPuzzleComplete(false)
     }
-    // Intentionally NOT re-running on every puzzleState change to prevent
-    // overwriting local edits on parent re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle])
 
-  // ── Hidden input ref ───────────────────────────────────────────────────────
+  // ── Refs ──────────────────────────────────────────────────────────────────
   const inputRef = useRef<TextInput | null>(null)
-  // Sentinel value approach: seed the input with 'a' so any keystroke is a diff
   const SENTINEL = 'a'
-
-  // Always-current refs so callbacks never read stale closure values
   const selectedIndexRef = useRef(selectedIndex)
   const selectedDirectionRef = useRef(selectedDirection)
   const cellStatesRef = useRef(cellStates)
@@ -491,34 +437,30 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   useEffect(() => {
     cellStatesRef.current = cellStates
   }, [cellStates])
-
-  // Suppresses onChangeText when backspace is being handled by onKeyPress
   const isHandlingBackspaceRef = useRef(false)
+  const isSyncingRef = useRef(false)
 
+  // Auto-focus on cell change
   useEffect(() => {
-    const t = setTimeout(() => {
-      inputRef.current?.focus()
-    }, 10)
+    const t = setTimeout(() => inputRef.current?.focus(), 10)
     return () => clearTimeout(t)
   }, [selectedIndex])
 
-  // ── Active word indices ────────────────────────────────────────────────────
+  // ── Active word + clue ────────────────────────────────────────────────────
   const activeWordIndices = useMemo(() => {
     const r = Math.floor(selectedIndex / width)
     const c = selectedIndex % width
-    if (cells[r][c].isBlack) return new Set<number>()
+    if (isBlank(puzzle, r, c)) return new Set<number>()
     return new Set(getWordIndices(r, c, selectedDirection, puzzle))
-  }, [selectedIndex, selectedDirection, puzzle, width, cells])
+  }, [selectedIndex, selectedDirection, puzzle, width])
 
-  // ── Active clue number (passed to ClueBar) ─────────────────────────────────
-  // Derived from wordMap so it's always consistent with the positional clue match
   const activeClueNumber = useMemo(
     () =>
       getActiveClueNumber(selectedIndex, selectedDirection, puzzle, wordMap),
     [selectedIndex, selectedDirection, puzzle, wordMap]
   )
 
-  // ── Debounced context sync ─────────────────────────────────────────────────
+  // ── Debounced save ────────────────────────────────────────────────────────
   const saveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const scheduleSave = useCallback(
@@ -538,7 +480,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     [updateActivePuzzle]
   )
 
-  // Flush on unmount
   useEffect(() => {
     return () => {
       if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current)
@@ -550,7 +491,7 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Navigation helpers ─────────────────────────────────────────────────────
+  // ── Navigation ────────────────────────────────────────────────────────────
   const toggleDirection = useCallback(() => {
     setSelectedDirection((d) => {
       const next: Direction = d === 'across' ? 'down' : 'across'
@@ -559,10 +500,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     })
   }, [updateActivePuzzle])
 
-  /**
-   * Jump to the next cell in the current word, or — if at the word end — jump
-   * to the first empty cell in the next word in reading order.
-   */
   const advanceSelection = useCallback(
     (currentIdx: number, dir: Direction, states: CellState[]) => {
       const next = advanceInWord(currentIdx, dir, puzzle)
@@ -570,23 +507,21 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         setSelectedIndex(next)
         return next
       }
-      // At word boundary: find next word's first blank cell
+      // Jump to first blank in next word
       for (let probe = currentIdx + 1; probe < total; probe++) {
         const pr = Math.floor(probe / width)
         const pc = probe % width
-        if (cells[pr][pc].isBlack) continue
+        if (isBlank(puzzle, pr, pc)) continue
         const clue =
           dir === 'across'
             ? wordMap.acrossClue[pr][pc]
             : wordMap.downClue[pr][pc]
         if (clue === null) continue
-        // Check if this is the start of a word
         const isWordStart =
           dir === 'across'
-            ? pc === 0 || cells[pr][pc - 1].isBlack
-            : pr === 0 || cells[pr - 1][pc].isBlack
+            ? pc === 0 || isBlank(puzzle, pr, pc - 1)
+            : pr === 0 || isBlank(puzzle, pr - 1, pc)
         if (isWordStart) {
-          // Find first blank in this word
           const wordCells = getWordIndices(pr, pc, dir, puzzle)
           const firstBlank =
             wordCells.find((i) => !states[i]?.letter) ?? wordCells[0]
@@ -596,16 +531,14 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       }
       return currentIdx
     },
-    [puzzle, total, width, cells, wordMap]
+    [puzzle, total, width, wordMap]
   )
 
-  // ── Cell press ─────────────────────────────────────────────────────────────
   const handleCellPress = useCallback(
     (idx: number) => {
       const r = Math.floor(idx / width)
       const c = idx % width
-      if (cells[r][c].isBlack) return
-
+      if (isBlank(puzzle, r, c)) return
       if (idx === selectedIndex) {
         toggleDirection()
       } else {
@@ -613,10 +546,9 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         updateActivePuzzle({ currentIndex: idx })
       }
     },
-    [cells, selectedIndex, toggleDirection, updateActivePuzzle, width]
+    [puzzle, selectedIndex, toggleDirection, updateActivePuzzle, width]
   )
 
-  // ── Navigate to clue (from ClueBar) ───────────────────────────────────────
   const handleNavigateClue = useCallback(
     (clueNumber: number, dir: Direction) => {
       if (dir !== selectedDirectionRef.current) {
@@ -624,44 +556,28 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         updateActivePuzzle({ direction: dir })
       }
 
-      for (let r = 0; r < height; r++) {
-        for (let c = 0; c < width; c++) {
-          const cell = cells[r][c]
-          if (cell.isBlack || cell.number !== clueNumber) continue
+      // Find the word start via wordMap — guaranteed correct
+      const clueList =
+        dir === 'across' ? puzzle.clues?.across : puzzle.clues?.down
+      const clue = clueList?.find((c) => c.number === clueNumber)
+      if (!clue) return
 
-          // Confirm it starts a real word (≥2 cells) in the requested direction
-          const startsAcross =
-            (c === 0 || cells[r][c - 1].isBlack) &&
-            c < width - 1 &&
-            !cells[r][c + 1].isBlack
-          const startsDown =
-            (r === 0 || cells[r - 1][c].isBlack) &&
-            r < height - 1 &&
-            !cells[r + 1][c].isBlack
+      const r = clue.position.index
+      const c = clue.position.col
+      const wordCells = getWordIndices(r, c, dir, puzzle)
+      const target =
+        wordCells.find((i) => !cellStatesRef.current[i]?.letter) ?? wordCells[0]
 
-          if (dir === 'across' && !startsAcross) continue
-          if (dir === 'down' && !startsDown) continue
-
-          const wordCells = getWordIndices(r, c, dir, puzzle)
-          const target =
-            wordCells.find((i) => !cellStatesRef.current[i]?.letter) ??
-            wordCells[0]
-
-          setSelectedIndex(target)
-          updateActivePuzzle({ currentIndex: target, direction: dir })
-          onNavigateClue?.(clueNumber, dir)
-          return
-        }
-      }
+      setSelectedIndex(target)
+      updateActivePuzzle({ currentIndex: target, direction: dir })
+      onNavigateClue?.(clueNumber, dir)
     },
-    [cells, height, width, puzzle, updateActivePuzzle, onNavigateClue]
+    [puzzle, updateActivePuzzle, onNavigateClue]
   )
 
-  // ── Character input ────────────────────────────────────────────────────────
+  // ── Input handlers ────────────────────────────────────────────────────────
   const handleChangeText = useCallback(
     (t: string) => {
-      // Backspace deletes the sentinel so onChangeText fires with ''.
-      // We handle backspace entirely in onKeyPress — suppress here.
       if (isHandlingBackspaceRef.current) {
         isHandlingBackspaceRef.current = false
         inputRef.current?.setNativeProps({ text: SENTINEL })
@@ -696,18 +612,14 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     [advanceSelection, puzzle, scheduleSave, toggleDirection]
   )
 
-  // ── Key press (backspace, arrows, enter) ───────────────────────────────────
   const handleKeyPress = useCallback(
     (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
       const key = e.nativeEvent.key
 
       if (key === 'Backspace') {
-        // Flag so the subsequent onChangeText('' ) call is ignored
         isHandlingBackspaceRef.current = true
-
         const curIdx = selectedIndexRef.current
         const curDir = selectedDirectionRef.current
-
         setCellStates((prev) => {
           const { nextIdx, shouldClear } = retreatSelection(
             curIdx,
@@ -724,13 +636,12 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         return
       }
 
-      // Arrow navigation — free movement, skips black cells
       const r = Math.floor(selectedIndexRef.current / width)
       const c = selectedIndexRef.current % width
 
       const move = (nr: number, nc: number) => {
         if (nr < 0 || nr >= height || nc < 0 || nc >= width) return
-        if (cells[nr][nc].isBlack) return
+        if (isBlank(puzzle, nr, nc)) return
         setSelectedIndex(nr * width + nc)
       }
 
@@ -740,19 +651,18 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       if (key === 'ArrowDown') move(r + 1, c)
       if (key === 'Enter') toggleDirection()
     },
-    [cells, height, puzzle, scheduleSave, toggleDirection, width]
+    [height, puzzle, scheduleSave, toggleDirection, width]
   )
 
   const headerHeight = useHeaderHeight()
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
       style={styles.kavContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={headerHeight}
     >
-      {/* Grid + completion banner fills available space */}
       <View style={styles.container}>
         {isPuzzleComplete && (
           <View style={styles.completionBanner}>
@@ -776,18 +686,24 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
                 <View key={`row-${r}`} style={{ flexDirection: 'row' }}>
                   {Array.from({ length: width }, (__, c) => {
                     const idx = r * width + c
-                    const def = cells[r][c]
+                    const blank = isBlank(puzzle, r, c)
                     const state = cellStates[idx]
 
-                    // Derive the corner label from wordMap — cell.number is
-                    // a sequential index in xword-parser, not the clue number
+                    // Corner label: show clue number only on word-start cells
                     const acrossNum = wordMap.acrossClue[r][c]
                     const downNum = wordMap.downClue[r][c]
-                    const isWordStart =
-                      (acrossNum !== null &&
-                        (c === 0 || cells[r][c - 1].isBlack)) ||
-                      (downNum !== null && (r === 0 || cells[r - 1][c].isBlack))
-                    const clueNum = isWordStart ? (acrossNum ?? downNum) : null
+                    const isAcrossStart =
+                      acrossNum !== null &&
+                      (c === 0 || isBlank(puzzle, r, c - 1))
+                    const isDownStart =
+                      downNum !== null && (r === 0 || isBlank(puzzle, r - 1, c))
+                    const clueNum =
+                      isAcrossStart || isDownStart
+                        ? (acrossNum ?? downNum)
+                        : null
+
+                    // xd-crossword-tools has no isCircled — extend here if needed
+                    const isCircled = false
 
                     const edgeStyle = {
                       borderTopWidth: r === 0 ? 1 : 0,
@@ -799,8 +715,8 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
                         key={`cell-${r}-${c}`}
                         letter={state?.letter ?? ''}
                         clueNumber={clueNum}
-                        isBlack={def.isBlack}
-                        isCircled={def.isCircled ?? false}
+                        isBlack={blank}
+                        isCircled={isCircled}
                         isSelected={idx === selectedIndex}
                         isActiveWord={activeWordIndices.has(idx)}
                         isCorrect={state?.isCorrect ?? null}
@@ -813,7 +729,7 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
                 </View>
               ))}
 
-              {/* Hidden sentinel-based TextInput */}
+              {/* Hidden sentinel TextInput */}
               <TextInput
                 ref={inputRef}
                 defaultValue={SENTINEL}
@@ -831,7 +747,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         </ScrollView>
       </View>
 
-      {/* ClueBar is a direct child of KAV — it gets pushed up with the keyboard */}
       <ClueBar
         puzzle={puzzle}
         activeClueNumber={activeClueNumber}
@@ -846,42 +761,28 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  kavContainer: {
-    flex: 1,
-    width: '100%',
-  },
+  kavContainer: { flex: 1, width: '100%' },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 12,
   },
-  scrollOuter: {
-    alignItems: 'center',
-  },
-  scrollInner: {
-    alignItems: 'center',
-  },
-  gridContainer: {
-    backgroundColor: COLOR.white,
-    borderWidth: 0,
-    position: 'relative',
-  },
+  scrollOuter: { alignItems: 'center' },
+  scrollInner: { alignItems: 'center' },
+  gridContainer: { backgroundColor: COLOR.white, position: 'relative' },
   cell: {
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderTopWidth: 0,
     borderLeftWidth: 0,
-    borderColor: '#c0c0c0',
+    borderColor: COLOR.border,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
   },
-  blackCell: {
-    backgroundColor: COLOR.black,
-    borderColor: COLOR.black,
-  },
+  blackCell: { backgroundColor: COLOR.black, borderColor: COLOR.black },
   clueNum: {
     position: 'absolute',
     top: 1,
@@ -919,9 +820,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  completionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  completionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 })
