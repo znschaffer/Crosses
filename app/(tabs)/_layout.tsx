@@ -1,10 +1,10 @@
 import { Tabs } from 'expo-router'
 import React from 'react'
 
-import { useColorScheme } from '@/hooks/use-color-scheme'
 import { HapticTab } from '@/components/haptic-tab'
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { Colors } from '@/constants/theme'
+import { useColorScheme } from '@/hooks/use-color-scheme'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
 export default function TabLayout() {
@@ -28,6 +28,16 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen 
+        name="archive"
+        options={{
+          title: 'Archive',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="archive" color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="import"
         options={{
@@ -35,6 +45,15 @@ export default function TabLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="download" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="person" color={color} />
           ),
         }}
       />
