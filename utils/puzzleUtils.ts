@@ -1,4 +1,3 @@
-import { parse } from '@xwordly/xword-parser'
 import { Buffer } from 'buffer'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'

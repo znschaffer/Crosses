@@ -1,3 +1,4 @@
+import { COLOR } from '@/constants/theme'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import {
   View,
@@ -16,7 +17,6 @@ type Direction = 'across' | 'down'
 
 export interface ClueBarProps {
   puzzle: CrosswordJSON
-  /** Pre-computed from GridInner's wordMap — single source of truth */
   activeClueNumber: number | null
   direction: Direction
   onNavigateClue: (clueNumber: number, direction: Direction) => void
@@ -56,6 +56,7 @@ interface ClueModalProps {
   clues: ClueEntry[]
   activeNumber: number | null
   direction: Direction
+  onToggleDirection: () => void
   onSelectClue: (entry: ClueEntry) => void
   onClose: () => void
 }
@@ -65,6 +66,7 @@ function ClueModal({
   clues,
   activeNumber,
   direction,
+  onToggleDirection,
   onSelectClue,
   onClose,
 }: ClueModalProps) {
@@ -81,9 +83,11 @@ function ClueModal({
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
         <Pressable style={styles.modalSheet} onPress={() => {}}>
           <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>
-            {direction === 'across' ? 'Across' : 'Down'}
-          </Text>
+          <Pressable onPress={onToggleDirection}>
+            <Text style={styles.modalTitle}>
+              {direction === 'across' ? 'Across' : 'Down'}
+            </Text>
+          </Pressable>
           <ScrollView
             ref={scrollRef}
             style={styles.modalScroll}
@@ -182,21 +186,24 @@ export default function ClueBar({
         {/* Clue text */}
         <TouchableOpacity
           style={styles.clueArea}
-          onPress={() => setModalVisible(true)}
+          // onPress={() => setModalVisible(true)}
+          onPress={() => onToggleDirection()}
           activeOpacity={0.75}
         >
           {activeEntry ? (
             <View style={styles.clueInner}>
-              <View style={styles.clueBadge}>
+              {/*<View style={styles.clueBadge}>
                 <Text style={styles.clueBadgeText}>
                   {activeEntry.number}
                   {direction === 'across' ? 'A' : 'D'}
                 </Text>
-              </View>
+              </View>*/}
               <Text
                 style={styles.clueText}
-                numberOfLines={1}
+                numberOfLines={2}
                 ellipsizeMode="tail"
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
               >
                 {activeEntry.text}
               </Text>
@@ -206,18 +213,6 @@ export default function ClueBar({
           )}
         </TouchableOpacity>
 
-        {/* Direction toggle */}
-        <TouchableOpacity
-          onPress={onToggleDirection}
-          style={styles.dirBtn}
-          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-        >
-          <Text style={styles.dirBtnText}>
-            {direction === 'across' ? '↔' : '↕'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Next */}
         <TouchableOpacity
           onPress={handleNext}
           disabled={!hasNext}
@@ -235,6 +230,7 @@ export default function ClueBar({
         clues={activeClues}
         activeNumber={activeClueNumber}
         direction={direction}
+        onToggleDirection={() => onToggleDirection()}
         onSelectClue={(entry) => onNavigateClue(entry.number, entry.direction)}
         onClose={() => setModalVisible(false)}
       />
@@ -251,7 +247,7 @@ const styles = StyleSheet.create({
     height: BAR_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f7',
+    backgroundColor: COLOR.white,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#c8c8cc',
     borderBottomWidth: StyleSheet.hairlineWidth,
