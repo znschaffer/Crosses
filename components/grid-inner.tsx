@@ -201,6 +201,7 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       const raw = t.replace(SENTINEL, '')
       const ch = raw.slice(-1).toUpperCase()
       inputRef.current?.setNativeProps({ text: SENTINEL })
+      console.log(ch)
 
       if (!ch) return
       if (ch === ' ') {
@@ -223,6 +224,8 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
         dispatch({ type: 'BACKSPACE' })
         return
       }
+
+      isHandlingBackspaceRef.current = false
 
       const r = Math.floor(gridState.selectedIndex / width)
       const c = gridState.selectedIndex % width
