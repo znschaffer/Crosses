@@ -1,122 +1,141 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ProfileHeader } from '@/components/profileHeader';
+import { ProfileStat } from '@/components/profileStat';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
+/**
+ * Displays Profile page
+ * @returns profile page
+ */
 export default function ProfileScreen() {
+  // local initial state for settings
   const [autoCheck, setAutoCheck] = useState(false);
   const [timer, setTimer] = useState(false);
   const [hints, setHints] = useState(false);
+
+  // local initial state for streak
+  const [streak, setStreak] = useState(10);
+  
+  // local initial state for avatar
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+
+  // local initial state for first and last name
+  const [firstName, setFirstName] = useState("Jane");
+  const [lastName, setLastName] = useState("Doe");
+
+  // Functions to toggle settings (Need to be wired)
+  const toggleAutoCheck = () => setAutoCheck(prev => !prev);
+  const toggleTimer = () => setTimer(prev => !prev);
+  const toggleHints = () => setHints(prev => !prev);
+
+  // Hook to grab saved profile data from Async Storage
+  useEffect(() => {
+    // Helper function to pull saved data from phone's memory
+    const loadProfileData = async () => {
+
+      try {
+        const [savedAvatar, savedFirst, savedLast] = await Promise.all ([
+          AsyncStorage.getItem('@user_avatar'),
+          AsyncStorage.getItem('@first_name'),
+          AsyncStorage.getItem('@last_name'),
+        ]);
+        if (savedAvatar !== null) {
+          setAvatarUri(savedAvatar);
+        };
+
+        if (savedFirst !== null) {
+          setFirstName(savedFirst);
+        };
+
+        if (savedLast !== null) {
+          setLastName(savedLast);
+        };
+      } catch (e) {
+        console.error("Error loading profile data", e);
+      }
+    };
+    loadProfileData();
+  }, []);
   
   return (
-    <View style={{ flex: 1, backgroundColor: '#d0d0d0' }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#d0d0d0' }}>
+      {/* TOP CONTAINER */}
       <View style={styles.container}>
-        <View style={styles.userRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.initials}>PN</Text>
-          </View>
-          <View>
-            <Text style={styles.username}>Player Name</Text>
-            <Text style={styles.streak}>_ day streak</Text>
-          </View>
-        </View>
+        {/* PROFILE HEADER */}
+        <ProfileHeader
+          avatarUri={avatarUri}
+          setAvatarUri={setAvatarUri}
+          firstName={firstName}
+          setFirstName={setFirstName}
+          lastName={lastName}
+          setLastName={setLastName}
+          streak={streak}
+        />
 
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text>Puzzles Completed</Text>
-            <Text style={styles.statValue}>100</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text>Average Time</Text>
-            <Text style={styles.statValue}>18:42</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text>Best Streak</Text>
-            <Text style={styles.statValue}>23 days</Text>
-          </View>
-        </View>
-        <Pressable style={styles.button}>
-          <Text style={styles.buttonText}>Reset Stats</Text>
-        </Pressable>
+        {/* PROFILE STAT */}
+        <ProfileStat streak={streak} setStreak={setStreak} />
       </View>
 
+      {/* BOTTOM CONTAINER */}
       <View style={styles.bottomcontainer}>
+        {/* SETTINGS */}
         <Text style={styles.header}>Settings</Text>
         <View style={styles.stat}>
           <Text>Enable Auto-check</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#e87756'}}
+            trackColor={{ false: '#ccc', true: '#4CAF50'}}
             thumbColor= '#fff'
             ios_backgroundColor="#ccc"
-            onValueChange={setAutoCheck}
+            onValueChange={toggleAutoCheck}
             value={autoCheck}
           />
         </View>
         <View style={styles.stat}>
           <Text>Enable Timer</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#e87756'}}
+            trackColor={{ false: '#ccc', true: '#4CAF50'}}
             thumbColor= '#fff'
             ios_backgroundColor="#ccc"
-            onValueChange={setTimer}
+            onValueChange={toggleTimer}
             value={timer}
           />
         </View>
         <View style={styles.stat}>
           <Text>Enable Hints</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#e87756'}}
+            trackColor={{ false: '#ccc', true: '#4CAF50'}}
             thumbColor= '#fff'
             ios_backgroundColor="#ccc"
-            onValueChange={setHints}
+            onValueChange={toggleHints}
             value={hints}
           />
         </View>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
+/**
+ * StyleSheet for Profile Page
+ */
 const styles = StyleSheet.create({
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F4D1C0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
 
   bottomcontainer: { 
     backgroundColor: '#fff',
-    justifyContent: 'center', 
-    alignItems: 'stretch', 
+    alignSelf: 'center',
     borderRadius: 24,
-    marginBottom: 24,
-    marginHorizontal: 24,
-    padding: 32,
-  },
-
-  button: {
-    backgroundColor: '#e87756',
-    paddingVertical: 16,
-    paddingHorizontal: 80,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'semibold',
-    fontSize: 16
+    width: '90%',
+    padding: '10%'
   },
 
   container: { 
     backgroundColor: '#fff',
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    alignSelf: 'center',
     borderRadius: 24,
+    width: '90%',
     margin: 24,
-    padding: 32
+    padding: '10%'
   },
 
   header: {
@@ -127,44 +146,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12
   },
 
-  initials: {
-    color: '#e87756',
-    textAlign: 'center',
-    fontSize:  24,
-    fontWeight: 'bold',
-  },
-
   stat: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 12,
-    width: '100%'
-  },
-
-  statsRow: {
-    fontSize: 16,
-    paddingBottom: 24
-  },
-
-  statValue: {
-    fontWeight: 'bold'
-  },
-
-  streak: { 
-    color: '#666',
-  },
-
-  username: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 20,
-  },
-
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 12,
-    justifyContent: 'flex-start',
     width: '100%'
   },
 
