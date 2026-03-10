@@ -57,7 +57,7 @@
     "web": {
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-web-browser"],
+    "plugins": ["expo-router", "expo-web-browser", "expo-font"],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
