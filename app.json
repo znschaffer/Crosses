@@ -14,22 +14,16 @@
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
-            "LSItemContentTypes": [
-              "com.crosses.puz"
-            ]
+            "LSItemContentTypes": ["com.crosses.puz"]
           }
         ],
         "UTExportedTypeDeclarations": [
           {
             "UTTypeIdentifier": "com.crosses.puz",
             "UTTypeDescription": "PUZ File",
-            "UTTypeConformsTo": [
-              "public.data"
-            ],
+            "UTTypeConformsTo": ["public.data"],
             "UTTypeTagSpecification": {
-              "public.filename-extension": [
-                "puz"
-              ]
+              "public.filename-extension": ["puz"]
             }
           }
         ]
@@ -42,10 +36,7 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": [
-            "DEFAULT",
-            "BROWSABLE"
-          ],
+          "category": ["DEFAULT", "BROWSABLE"],
           "data": [
             {
               "scheme": "file",
@@ -66,11 +57,7 @@
     "web": {
       "output": "static"
     },
-    "plugins": [
-      "expo-router",
-      "expo-web-browser",
-      "expo-font"
-    ],
+    "plugins": ["expo-router", "expo-web-browser", "expo-font"],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
