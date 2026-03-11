@@ -1,7 +1,7 @@
-name: Create Production Builds
+name: Create Android Development Build
 
 on:
-  push:
+  pull_request:
     branches: ['main']
 
 jobs:
@@ -9,3 +9,4 @@ jobs:
     type: build
     params:
       platform: android
+      profile: development
