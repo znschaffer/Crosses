@@ -144,24 +144,6 @@
               "pathPattern": ".*\\.puz"
             }
           ]
-        },
-        {
-          "action": "VIEW",
-          "category": ["DEFAULT", "BROWSABLE"],
-          "data": [
-            {
-              "scheme": "file",
-              "mimeType": "*/*",
-              "host": "*",
-              "pathPattern": ".*\\.puz"
-            },
-            {
-              "scheme": "content",
-              "mimeType": "*/*",
-              "host": "*",
-              "pathPattern": ".*\\.puz"
-            }
-          ]
         }
       ]
     },
