@@ -1,6 +1,5 @@
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { extractPuzzleData, pickPuzFile } from '@/utils/puzzleUtils'
-import { router } from 'expo-router'
 
 export function usePuzzleLoader() {
   const { loadPuzzleFile } = usePuzzle()
@@ -10,7 +9,6 @@ export function usePuzzleLoader() {
       if (!fileData) return
       const puzzle = await extractPuzzleData(fileData.uri, fileData.name)
       loadPuzzleFile(puzzle.buffer)
-      router.push('/(tabs)/import/importSuccess')
     } catch (error) {
       console.error('Error loading puzzle file: ', error)
     }

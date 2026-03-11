@@ -201,7 +201,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       const raw = t.replace(SENTINEL, '')
       const ch = raw.slice(-1).toUpperCase()
       inputRef.current?.setNativeProps({ text: SENTINEL })
-      console.log(ch)
 
       if (!ch) return
       if (ch === ' ') {
