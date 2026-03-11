@@ -17,6 +17,13 @@
             "LSItemContentTypes": [
               "com.crosses.puz"
             ]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
           }
         ],
         "UTExportedTypeDeclarations": [
@@ -31,9 +38,22 @@
                 "puz"
               ]
             }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": [
+                "puz"
+              ]
+            }
           }
         ]
-      }
+      },
+      "bundleIdentifier": "com.anonymous.Crosses"
     },
     "android": {
       "edgeToEdgeEnabled": true,
