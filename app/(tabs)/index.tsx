@@ -22,7 +22,7 @@ export default function HomeScreen() {
       <View style={{ flex: 3 }}>
         <FlatList
           keyExtractor={(state, index) => {
-            return index + (state.puzzle.title ?? '')
+            return index + (state.puzzle.meta.title ?? '')
           }}
           data={Object.values(state.puzzles)}
           renderItem={({ item }) => (
@@ -35,7 +35,7 @@ export default function HomeScreen() {
                   padding: 4,
                 }}
               >
-                {item.puzzle.title} - {item.puzzle.author}
+                {item.puzzle.meta.title} - {item.puzzle.meta.title}
               </Text>
             </View>
           )}
