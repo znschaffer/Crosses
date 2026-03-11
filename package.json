@@ -8,7 +8,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "prettier:check": "prettier --check ."
   },
   "jest": {
     "preset": "jest-expo"
