@@ -14,55 +14,155 @@
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
-            "LSItemContentTypes": ["com.crosses.puz"]
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
           },
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
-            "LSItemContentTypes": ["com.crosses.puz"]
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
           },
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
-            "LSItemContentTypes": ["com.crosses.puz"]
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
           },
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
-            "LSItemContentTypes": ["com.crosses.puz"]
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": [
+              "com.crosses.puz"
+            ]
           }
         ],
         "UTExportedTypeDeclarations": [
           {
             "UTTypeIdentifier": "com.crosses.puz",
             "UTTypeDescription": "PUZ File",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["puz"]
+              "public.filename-extension": [
+                "puz"
+              ]
             }
           },
           {
             "UTTypeIdentifier": "com.crosses.puz",
             "UTTypeDescription": "PUZ File",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["puz"]
+              "public.filename-extension": [
+                "puz"
+              ]
             }
           },
           {
             "UTTypeIdentifier": "com.crosses.puz",
             "UTTypeDescription": "PUZ File",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["puz"]
+              "public.filename-extension": [
+                "puz"
+              ]
             }
           },
           {
             "UTTypeIdentifier": "com.crosses.puz",
             "UTTypeDescription": "PUZ File",
-            "UTTypeConformsTo": ["public.data"],
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
             "UTTypeTagSpecification": {
-              "public.filename-extension": ["puz"]
+              "public.filename-extension": [
+                "puz"
+              ]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": [
+                "puz"
+              ]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": [
+                "puz"
+              ]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": [
+                "puz"
+              ]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": [
+              "public.data"
+            ],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": [
+                "puz"
+              ]
             }
           }
         ],
@@ -77,7 +177,31 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": ["DEFAULT", "BROWSABLE"],
+          "category": [
+            "DEFAULT",
+            "BROWSABLE"
+          ],
+          "data": [
+            {
+              "scheme": "file",
+              "mimeType": "*/*",
+              "host": "*",
+              "pathPattern": ".*\\.puz"
+            },
+            {
+              "scheme": "content",
+              "mimeType": "*/*",
+              "host": "*",
+              "pathPattern": ".*\\.puz"
+            }
+          ]
+        },
+        {
+          "action": "VIEW",
+          "category": [
+            "DEFAULT",
+            "BROWSABLE"
+          ],
           "data": [
             {
               "scheme": "file",
@@ -98,7 +222,11 @@
     "web": {
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-web-browser", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      "expo-font"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
@@ -109,6 +237,12 @@
         "projectId": "359cf29b-7ade-4106-8627-9401fefc3ce3"
       }
     },
-    "owner": "team-red"
+    "owner": "team-red",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/359cf29b-7ade-4106-8627-9401fefc3ce3"
+    }
   }
 }
