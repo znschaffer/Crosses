@@ -1,3 +1,4 @@
+import HomeProfileMenu from '@/components/HomeProfileMenu'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { usePuzzleLoader } from '@/hooks/usePuzzleLoader'
@@ -26,9 +27,7 @@ export default function HomeScreen() {
           <Text style={styles.title}>Crosses</Text>
           <Text style={styles.date}>{today}</Text>
         </View>
-        <View style={styles.profileIcon}>
-          <Text style={styles.profileText}>JD</Text>
-        </View>
+        <HomeProfileMenu />
       </View>
       <StreakCard streak={mockStreak} />
 
