@@ -21,11 +21,15 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Crosses</Text>
-        <Text style={styles.date}>{today}</Text>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.title}>Crosses</Text>
+          <Text style={styles.date}>{today}</Text>
+        </View>
+        <View style={styles.profileIcon}>
+          <Text style={styles.profileText}>JD</Text>
+        </View>
       </View>
-
       <StreakCard streak={mockStreak} />
 
       <View style={styles.sectionHeader}>
@@ -69,8 +73,11 @@ const styles = StyleSheet.create({
     padding: 40,
     backgroundColor: '#F5F3EF',
   },
-  header: {
-    marginBottom: 16,
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   title: {
     fontSize: 36,
@@ -82,13 +89,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4A5565',
   },
+  profileIcon: {
+    width: 48,
+    height: 48,
+    margin: 10,
+    borderRadius: 22,
+    backgroundColor: '#F6DCD2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#E87756',
+  },
   sectionHeader: {
-    marginTop: 32,
+    marginTop: 28,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#0A0A0A',
+    lineHeight: 28,
   },
   button: {
     borderColor: 'black',
