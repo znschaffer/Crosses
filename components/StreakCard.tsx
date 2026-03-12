@@ -15,19 +15,31 @@ export default function StreakCard({ streak }: StreakCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    marginTop: 10,
+    width: '100%',
+    minHeight: 120,
     borderRadius: 24,
+    borderWidth: 2,
     borderColor: '#F0E5D0',
     backgroundColor: '#FFF9F0',
+    paddingTop: 20,
+    paddingRight: 26,
+    paddingBottom: 20,
+    paddingLeft: 26,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   streakNumber: {
     fontSize: 36,
+    fontWeight: '700',
     color: '#D4A574',
-    fontWeight: 700,
+    lineHeight: 40,
   },
   label: {
     fontSize: 12,
     color: '#4A5565',
-    fontWeight: 500,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    letterSpacing: 0.5,
+    lineHeight: 16,
   },
 })
