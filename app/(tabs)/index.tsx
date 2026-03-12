@@ -1,24 +1,43 @@
 import HomeProfileMenu from '@/components/HomeProfileMenu'
+import PuzzlePreviewCard from '@/components/PuzzlePreviewCard'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { usePuzzleLoader } from '@/hooks/usePuzzleLoader'
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native'
+import { router } from 'expo-router'
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const { handleLoadPuzzle } = usePuzzleLoader()
   const { state } = usePuzzle()
+  const { activePuzzle } = usePuzzle()
   const mockStreak = 12
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   })
+
+  const completionPercent = activePuzzle
+    ? Math.round(
+        (activePuzzle.userAnswers.filter((cell) => cell !== '').length /
+          activePuzzle.userAnswers.length) *
+          100
+      )
+    : 0
+
+  const getElapsedTime = (startedAt?: string) => {
+    if (!startedAt) return '0:00'
+
+    const start = new Date(startedAt).getTime()
+    const now = Date.now()
+    const diffMs = now - start
+    const totalSeconds = Math.floor(diffMs / 1000)
+
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
 
   return (
     <View style={styles.container}>
@@ -35,11 +54,34 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Today&apos;s Puzzle</Text>
       </View>
 
-      <View style={{ flex: 1 }}>
+      {activePuzzle ? (
+        <PuzzlePreviewCard
+          title={activePuzzle.puzzle.meta?.title ?? 'Untitled Puzzle'}
+          author={activePuzzle.puzzle.meta?.author ?? 'Unknown Author'}
+          size={`${activePuzzle.puzzle.tiles.length}×${activePuzzle.puzzle.tiles[0]?.length ?? 0}`}
+          completionPercent={completionPercent}
+          elapsedTime={getElapsedTime(activePuzzle.startedAt)}
+          tag="• DAILY CLASSIC"
+          onPress={() => router.navigate('/(tabs)/grid')}
+        />
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>No puzzle loaded</Text>
+
+          <Pressable
+            style={styles.loadButton}
+            onPress={() => router.navigate('/import')}
+          >
+            <Text style={styles.loadButtonText}>Import Puzzle</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* <View style={{ flex: 1 }}>
         <TouchableOpacity style={styles.button} onPress={handleLoadPuzzle}>
           <Text>Load Puzzle</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
       <View style={{ flex: 3 }}>
         <FlatList
           keyExtractor={(state, index) => {
@@ -120,5 +162,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     borderRadius: 20,
+  },
+  emptyCard: {
+    width: '100%',
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: '#F0E5D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0A0A0A',
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#4A5565',
+    textAlign: 'center',
+  },
+  loadButton: {
+    marginTop: 20,
+    backgroundColor: '#E87756',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  loadButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 })
