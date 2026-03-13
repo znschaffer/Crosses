@@ -59,7 +59,11 @@ export default function ProfileScreen() {
   }, []);
   
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#d0d0d0' }}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#f5f3ef' }}>
+      {/* HEADER */}
+      <View>
+        <Text style={styles.headerbar}>Profile</Text>
+      </View>
       {/* TOP CONTAINER */}
       <View style={styles.container}>
         {/* PROFILE HEADER */}
@@ -84,9 +88,9 @@ export default function ProfileScreen() {
         <View style={styles.stat}>
           <Text>Enable Auto-check</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#4CAF50'}}
+            trackColor={{ false: '#f5f3ef', true: '#4CAF50'}}
             thumbColor= '#fff'
-            ios_backgroundColor="#ccc"
+            ios_backgroundColor="#f5f3ef"
             onValueChange={toggleAutoCheck}
             value={autoCheck}
           />
@@ -94,9 +98,9 @@ export default function ProfileScreen() {
         <View style={styles.stat}>
           <Text>Enable Timer</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#4CAF50'}}
+            trackColor={{ false: '#f5f3ef', true: '#4CAF50'}}
             thumbColor= '#fff'
-            ios_backgroundColor="#ccc"
+            ios_backgroundColor="#f5f3ef"
             onValueChange={toggleTimer}
             value={timer}
           />
@@ -104,9 +108,9 @@ export default function ProfileScreen() {
         <View style={styles.stat}>
           <Text>Enable Hints</Text>
           <Switch 
-            trackColor={{ false: '#ccc', true: '#4CAF50'}}
+            trackColor={{ false: '#f5f3ef', true: '#4CAF50'}}
             thumbColor= '#fff'
-            ios_backgroundColor="#ccc"
+            ios_backgroundColor="#f5f3ef"
             onValueChange={toggleHints}
             value={hints}
           />
@@ -134,16 +138,26 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 24,
     width: '90%',
-    margin: 24,
+    marginTop: 12,
+    marginBottom: 24,
     padding: '10%'
   },
 
   header: {
-    color: '#000',
+    color: '#0a0a0a',
     fontWeight: 'bold',
     fontSize: 20,
     textAlign: 'left',
     paddingHorizontal: 12
+  },
+
+  headerbar: {
+    color: '#0a0a0a',
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'left',
+    marginTop: 60,
+    marginLeft: 20
   },
 
   stat: {
