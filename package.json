@@ -31,11 +31,7 @@
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
-<<<<<<< HEAD
-    "expo-image-picker": "~17.0.10",
-=======
     "expo-linear-gradient": "~15.0.8",
->>>>>>> 225660a8c07b76ca9719cbce4c8aa4a231ca159f
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.23",
     "expo-splash-screen": "~31.0.13",
