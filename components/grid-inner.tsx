@@ -1,4 +1,3 @@
-import { COLOR } from '@/constants/theme'
 import { getPuzzleId, usePuzzle } from '@/contexts/PuzzleContext'
 import { GridState, useGridState } from '@/hooks/useGridState'
 import { Direction, Props } from '@/types/Grid.t'
@@ -13,6 +12,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   KeyboardAvoidingView,
   LayoutChangeEvent,
+  Modal,
   NativeSyntheticEvent,
   Platform,
   ScrollView,
@@ -20,10 +20,13 @@ import {
   Text,
   TextInput,
   TextInputKeyPressEventData,
+  TouchableOpacity,
   View,
 } from 'react-native'
 import { Cell } from './Cell'
 import ClueBar from './cluebar'
+import { router } from 'expo-router'
+import { COLOR } from '@/constants/theme'
 
 const MIN_CELL_SIZE = 20
 const MAX_CELL_SIZE = 84
@@ -244,6 +247,16 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
 
   const headerHeight = useHeaderHeight()
 
+  const toggleDevComplete = useCallback(() => {
+    const complete = !gridState.isPuzzleComplete
+
+    dispatch({ type: 'SET_PUZZLE_COMPLETE', complete })
+    updateActivePuzzle({
+      complete,
+      finishedAt: complete ? new Date().toISOString() : null,
+    })
+  }, [dispatch, gridState, updateActivePuzzle])
+
   return (
     <KeyboardAvoidingView
       style={styles.kavContainer}
@@ -253,9 +266,95 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       {/* Grid area: fills all space between header and clue bar */}
       <View style={styles.gridArea} onLayout={onGridAreaLayout}>
         {gridState.isPuzzleComplete && (
-          <View style={styles.completionBanner}>
-            <Text style={styles.completionText}>🎉 Puzzle Complete!</Text>
-          </View>
+          // Change to Puzzle Complete modal centered in screen
+          <Modal
+            backdropColor={'#cccccc00'}
+            statusBarTranslucent={true}
+            navigationBarTranslucent={true}
+            animationType="fade"
+            visible={true}
+          >
+            <View style={styles.completionModal}>
+              <Text>Puzzle Complete!</Text>
+              <Text>
+                Time:
+                {puzzleState.finishedAt &&
+                  (new Date(puzzleState.finishedAt).getTime() -
+                    new Date(puzzleState.startedAt).getTime()) /
+                    1000}
+                seconds
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#4CAF50',
+                    borderRadius: 8,
+                    justifyContent: 'center',
+                    height: 36,
+                    width: 64,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    const emptyCellStates = Array.from(
+                      { length: total },
+                      (_, i) => {
+                        const r = Math.floor(i / width)
+                        const c = i % width
+                        if (isBlank(puzzle, r, c))
+                          return { letter: '', isCorrect: null }
+                        return { letter: '', isCorrect: null }
+                      }
+                    )
+                    dispatch({
+                      type: 'RESET',
+                      cellStates: emptyCellStates,
+                      selectedIndex: 0,
+                      selectedDirection: 'across',
+                    })
+                    updateActivePuzzle({
+                      userAnswers: new Array(total).fill(''),
+                      currentIndex: 0,
+                      direction: 'across',
+                      complete: false,
+                      finishedAt: null,
+                      startedAt: new Date().toISOString(),
+                    })
+                  }}
+                >
+                  <Text style={{ color: 'white' }}>Reset</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#4CAF50',
+                    borderRadius: 8,
+                    justifyContent: 'center',
+                    height: 36,
+                    width: 64,
+                    alignItems: 'center',
+                  }}
+                  onPress={() => {
+                    router.navigate('/(tabs)')
+                  }}
+                >
+                  <Text style={{ color: 'white' }}>Home</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        )}
+
+        {__DEV__ && (
+          <TouchableOpacity
+            onPress={toggleDevComplete}
+            style={[
+              styles.devToggle,
+              gridState.isPuzzleComplete ? styles.devToggleActive : null,
+            ]}
+          >
+            <Text style={styles.devToggleText}>
+              {gridState.isPuzzleComplete ? 'DEV: Reset' : 'DEV: Complete'}
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Horizontal scroll for wide puzzles; vertical scroll disabled */}
@@ -373,4 +472,32 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   completionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  devToggle: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    zIndex: 9999,
+  },
+  devToggleActive: {
+    backgroundColor: '#aa3333',
+  },
+  devToggleText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  completionModal: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    maxHeight: '50%',
+    borderRadius: 16,
+    width: '80%',
+    margin: 'auto',
+  },
 })
