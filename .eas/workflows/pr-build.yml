@@ -1,0 +1,20 @@
+name: Native Build
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'app.json'
+      - 'app.config.js'
+      - 'android/**'
+      - 'ios/**'
+
+jobs:
+  build_android:
+    name: Build Android Dev Client
+    type: build
+    params:
+      platform: android
+      profile: development

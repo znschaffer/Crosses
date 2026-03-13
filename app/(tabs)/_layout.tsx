@@ -1,14 +1,17 @@
-import { Tabs } from 'expo-router'
+import { router, Tabs } from 'expo-router'
 import React from 'react'
 
 import { HapticTab } from '@/components/haptic-tab'
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { Colors } from '@/constants/theme'
+import { usePuzzle } from '@/contexts/PuzzleContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { TouchableOpacity } from 'react-native'
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()
+  const { activePuzzle } = usePuzzle()
 
   return (
     <Tabs
@@ -40,10 +43,27 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="grid"
+        options={{
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => router.navigate('/(tabs)')}
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+              style={{ marginLeft: 8 }}
+            >
+              <Ionicons name="chevron-back" size={24} color="#197602" />
+            </TouchableOpacity>
+          ),
+          title: activePuzzle?.puzzle.meta?.title ?? 'Grid',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="play" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="import"
         options={{
           title: 'Import',
-          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="download" color={color} />
           ),
