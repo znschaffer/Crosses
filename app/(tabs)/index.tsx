@@ -2,13 +2,10 @@ import HomeProfileMenu from '@/components/HomeProfileMenu'
 import PuzzlePreviewCard from '@/components/PuzzlePreviewCard'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
-import { usePuzzleLoader } from '@/hooks/usePuzzleLoader'
 import { router } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
-  const { handleLoadPuzzle } = usePuzzleLoader()
-  const { state } = usePuzzle()
   const { activePuzzle } = usePuzzle()
   const mockStreak = 12
   const today = new Date().toLocaleDateString('en-US', {
