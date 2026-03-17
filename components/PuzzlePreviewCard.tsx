@@ -9,6 +9,7 @@ type PuzzlePreviewCardProps = {
   tag?: string
   onPress: () => void
 }
+const rowCounts = [2, 4, 5, 4, 3]
 
 export default function PuzzlePreviewCard({
   title,
@@ -22,35 +23,49 @@ export default function PuzzlePreviewCard({
   return (
     <View style={styles.card}>
       <View style={styles.previewGrid}>
-        <Text style={styles.previewPlaceholder}>PUZZLE</Text>
-
-        <View style={styles.tagPill}>
-          <Text style={styles.tagText}>{tag}</Text>
+        <View style={styles.mockGrid}>
+          {rowCounts.map((cellCount, rowIndex) => (
+            <View key={`row-${rowIndex}`} style={styles.mockRow}>
+              {Array.from({ length: cellCount }).map((_, cellIndex) => (
+                <View
+                  key={`cell-${rowIndex}-${cellIndex}`}
+                  style={styles.blackCell}
+                />
+              ))}
+            </View>
+          ))}
         </View>
-
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.meta}>
-          by {author} {size}
-        </Text>
-
-        <View style={styles.progressRow}>
-          <Text style={styles.progressText}>
-            <Text style={styles.progressBold}>{completionPercent}%</Text>{' '}
-            complete
-          </Text>
-          <Text style={styles.elapsedText}>{elapsedTime} elapsed</Text>
-        </View>
-
-        <View style={styles.progressBarBackground}>
-          <View
-            style={[styles.progressBarFill, { width: `${completionPercent}%` }]}
-          />
-        </View>
-
-        <Pressable style={styles.button} onPress={onPress}>
-          <Text style={styles.buttonText}>▶ Continue Puzzle</Text>
-        </Pressable>
       </View>
+
+      <View style={styles.tagPill}>
+        <Text style={styles.tagText}>{tag}</Text>
+      </View>
+
+      <Text style={styles.title} numberOfLines={2}>
+        {title}
+      </Text>
+      <Text style={styles.meta} numberOfLines={2}>
+        by {author}
+      </Text>
+
+      <Text style={styles.sizeText}>{size}</Text>
+
+      <View style={styles.progressRow}>
+        <Text style={styles.progressText}>
+          <Text style={styles.progressBold}>{completionPercent}%</Text> complete
+        </Text>
+        <Text style={styles.elapsedText}>{elapsedTime} elapsed</Text>
+      </View>
+
+      <View style={styles.progressBarBackground}>
+        <View
+          style={[styles.progressBarFill, { width: `${completionPercent}%` }]}
+        />
+      </View>
+
+      <Pressable style={styles.button} onPress={onPress}>
+        <Text style={styles.buttonText}>▶ Continue Puzzle</Text>
+      </Pressable>
     </View>
   )
 }
@@ -60,27 +75,38 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 24,
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 18,
     borderWidth: 1,
     borderColor: '#F0E5D0',
   },
   previewGrid: {
-    height: 180,
+    height: 120,
+    width: 120,
     borderRadius: 16,
-    backgroundColor: '#F7F7F7',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 6,
   },
-  previewPlaceholder: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#101828',
+  mockGrid: {
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  mockRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  blackCell: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    backgroundColor: '#101828',
   },
   tagPill: {
-    marginTop: 16,
+    marginTop: 14,
     alignSelf: 'flex-start',
     borderRadius: 999,
-    backgroundColor: '#F8DDD5',
+    backgroundColor: '#FFE8E0',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -100,10 +126,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4A5565',
   },
+  sizeText: {
+    marginTop: 2,
+    fontSize: 14,
+    color: '#4A5565',
+  },
   progressRow: {
-    marginTop: 20,
+    marginTop: 18,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   progressText: {
     fontSize: 14,
@@ -131,11 +163,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E87756',
   },
   button: {
+    width: '100%',
     marginTop: 20,
     borderRadius: 16,
     backgroundColor: '#E87756',
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  buttonText: { color: '#FFFFFF', fontSize: 18, fontWeight: '600' },
+  buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 })

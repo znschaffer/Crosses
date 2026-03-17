@@ -4,7 +4,7 @@ import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { usePuzzleLoader } from '@/hooks/usePuzzleLoader'
 import { router } from 'expo-router'
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const { handleLoadPuzzle } = usePuzzleLoader()
@@ -76,34 +76,6 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       )}
-
-      {/* <View style={{ flex: 1 }}>
-        <TouchableOpacity style={styles.button} onPress={handleLoadPuzzle}>
-          <Text>Load Puzzle</Text>
-        </TouchableOpacity>
-      </View> */}
-      <View style={{ flex: 3 }}>
-        <FlatList
-          keyExtractor={(state, index) => {
-            return index + (state.puzzle.meta.title ?? '')
-          }}
-          data={Object.values(state.puzzles)}
-          renderItem={({ item }) => (
-            <View>
-              <Text
-                style={{
-                  borderColor: 'black',
-                  borderWidth: 1,
-                  margin: 4,
-                  padding: 4,
-                }}
-              >
-                {item.puzzle.meta.title} - {item.puzzle.meta.title}
-              </Text>
-            </View>
-          )}
-        />
-      </View>
     </View>
   )
 }
