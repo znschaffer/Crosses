@@ -242,6 +242,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     elevation: 5,
+    marginTop: '50%',
   },
 
   modalInput: {
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
 

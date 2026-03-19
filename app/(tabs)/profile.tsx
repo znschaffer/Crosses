@@ -58,11 +58,10 @@ export default function ProfileScreen() {
   }, [])
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#f5f3ef' }}>
-      {/* HEADER */}
-      <View>
-        <Text style={styles.headerbar}>Profile</Text>
-      </View>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: '#f5f3ef' }}
+      contentContainerStyle={styles.contentContainer}
+    >
       {/* TOP CONTAINER */}
       <View style={styles.container}>
         {/* PROFILE HEADER */}
@@ -127,26 +126,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignSelf: 'center',
     borderRadius: 24,
-    width: '90%',
-    padding: '10%',
+    padding: 34,
   },
 
   container: {
     backgroundColor: '#fff',
     alignSelf: 'center',
     borderRadius: 24,
-    width: '90%',
-    marginTop: 12,
-    marginBottom: 24,
-    padding: '10%',
+    padding: 34,
+    gap: 12,
+  },
+
+  contentContainer: {
+    justifyContent: 'center',
+    gap: 24,
+    padding: 24,
   },
 
   header: {
     color: '#0a0a0a',
     fontWeight: 'bold',
     fontSize: 20,
-    textAlign: 'left',
+    textAlign: 'center',
     paddingHorizontal: 12,
+    marginBottom: 24,
   },
 
   headerbar: {
