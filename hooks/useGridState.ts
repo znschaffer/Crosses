@@ -24,6 +24,7 @@ type GridAction =
   | { type: 'SELECT_CELL'; index: number }
   | { type: 'TOGGLE_DIRECTION' }
   | { type: 'NAVIGATE_TO_CLUE'; index: number; direction: Direction }
+  | { type: 'SET_PUZZLE_COMPLETE'; complete: boolean }
   | { type: 'ARROW_MOVE'; row: number; col: number }
   | {
       type: 'RESET'
@@ -49,6 +50,12 @@ function createReducer(
           return { ...state, selectedDirection: next }
         }
         return { ...state, selectedIndex: action.index }
+      }
+      case 'SET_PUZZLE_COMPLETE': {
+        return {
+          ...state,
+          isPuzzleComplete: action.complete,
+        }
       }
       case 'TOGGLE_DIRECTION': {
         return {

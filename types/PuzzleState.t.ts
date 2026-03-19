@@ -6,6 +6,7 @@ export interface PuzzleState {
   direction: 'across' | 'down'
   startedAt: string
   updatedAt: string
+  finishedAt: string | null
   complete: boolean
   userAnswers: string[]
 }
