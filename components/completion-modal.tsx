@@ -1,22 +1,23 @@
+import { COLOR, Colors } from '@/constants/theme'
 import { PuzzleState } from '@/types/PuzzleState.t'
-import { router } from 'expo-router'
 import React from 'react'
 import {
-  StyleSheet,
   Modal,
+  Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Platform,
 } from 'react-native'
-import { Colors, COLOR } from '@/constants/theme'
 
 export default function CompletionModal({
   puzzleState,
   onReset,
+  onClose,
 }: {
   puzzleState: PuzzleState
   onReset: () => void
+  onClose: () => void
 }) {
   const formatDurationAdaptive = (
     start?: string | null,
@@ -101,7 +102,9 @@ export default function CompletionModal({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push('/(tabs)')}
+              onPress={() => {
+                onClose()
+              }}
               style={styles.ghostButton}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityLabel="Go home"

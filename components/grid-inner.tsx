@@ -9,9 +9,12 @@ import {
   isBlank,
 } from '@/utils/gridUtils'
 import { useHeaderHeight } from '@react-navigation/elements'
+import { useFocusEffect } from '@react-navigation/native'
 import Constants from 'expo-constants'
+import { router } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  Keyboard,
   KeyboardAvoidingView,
   LayoutChangeEvent,
   NativeSyntheticEvent,
@@ -126,11 +129,39 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const inputRef = useRef<TextInput | null>(null)
   const SENTINEL = 'a'
   const isHandlingBackspaceRef = useRef(false)
+  const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      if (puzzleState.complete || gridState.isPuzzleComplete) {
+        setShowCompletionModal(true)
+      }
+      return () => {}
+    }, [puzzleState.complete, gridState.isPuzzleComplete])
+  )
 
   useEffect(() => {
+    if (puzzleState.complete || gridState.isPuzzleComplete) {
+      setShowCompletionModal(true)
+    }
+  }, [puzzleState.complete, gridState.isPuzzleComplete])
+
+  useEffect(() => {
+    if (showCompletionModal) return
     const t = setTimeout(() => inputRef.current?.focus(), 10)
     return () => clearTimeout(t)
-  }, [gridState.selectedIndex, gridState.selectedDirection])
+  }, [
+    gridState.selectedIndex,
+    gridState.selectedDirection,
+    showCompletionModal,
+  ])
+
+  useEffect(() => {
+    if (!showCompletionModal) return
+
+    inputRef.current?.blur()
+    Keyboard.dismiss()
+  }, [showCompletionModal])
 
   const [gridAreaSize, setGridAreaSize] = useState<{
     w: number
@@ -316,12 +347,16 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     >
       {/* Grid area: fills all space between header and clue bar */}
       <View style={styles.gridArea} onLayout={onGridAreaLayout}>
-        {gridState.isPuzzleComplete && (
+        {gridState.isPuzzleComplete && showCompletionModal && (
           <CompletionModal
             puzzleState={puzzleState}
             onReset={() =>
               onReset(total, width, puzzle, dispatch, updateActivePuzzle)
             }
+            onClose={() => {
+              setShowCompletionModal(false)
+              router.push('/(tabs)')
+            }}
           />
         )}
 
