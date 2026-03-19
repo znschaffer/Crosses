@@ -26,8 +26,19 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="archive"
+        options={{
+          title: 'Archive',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="archive" color={color} />
           ),
         }}
       />
@@ -55,6 +66,15 @@ export default function TabLayout() {
           title: 'Import',
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="download" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="person" color={color} />
           ),
         }}
       />
