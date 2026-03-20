@@ -53,7 +53,7 @@ export default function HomeProfileMenue() {
   // profile tab will be added
   const handleGoToProfile = () => {
     setMenuOpen(false)
-    router.navigate('/(tabs)')
+    router.navigate('/(tabs)/profile')
   }
 
   return (
