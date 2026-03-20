@@ -5,26 +5,37 @@ import { usePuzzle } from '@/contexts/PuzzleContext'
 import { calculateDailyStreak } from '@/utils/streak'
 import { formatElapsedTime } from '@/utils/time'
 import { router } from 'expo-router'
+import { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const { activePuzzle, state } = usePuzzle()
 
-  const streak = calculateDailyStreak(state.puzzles)
+  const streak = useMemo(() => {
+    return calculateDailyStreak(state.puzzles)
+  }, [state.puzzles])
+
+  const completionPercent = useMemo(() => {
+    if (!activePuzzle) return 0
+    return Math.round(
+      (activePuzzle.userAnswers.filter((cell) => cell !== '').length /
+        activePuzzle.userAnswers.length) *
+        100
+    )
+  }, [activePuzzle])
+
+  const puzzleSize = useMemo(() => {
+    if (!activePuzzle?.puzzle.tiles?.length) return 'Unknow size'
+    const rows = activePuzzle.puzzle.tiles.length
+    const cols = activePuzzle.puzzle.tiles[0]?.length ?? 0
+    return cols > 0 ? `${rows}×${cols}` : 'Unknown size'
+  }, [activePuzzle])
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   })
-
-  const completionPercent = activePuzzle
-    ? Math.round(
-        (activePuzzle.userAnswers.filter((cell) => cell !== '').length /
-          activePuzzle.userAnswers.length) *
-          100
-      )
-    : 0
 
   return (
     <View style={styles.container}>
@@ -45,7 +56,7 @@ export default function HomeScreen() {
         <PuzzlePreviewCard
           title={activePuzzle.puzzle.meta?.title ?? 'Untitled Puzzle'}
           author={activePuzzle.puzzle.meta?.author ?? 'Unknown Author'}
-          size={`${activePuzzle.puzzle.tiles.length}×${activePuzzle.puzzle.tiles[0]?.length ?? 0}`}
+          size={puzzleSize}
           completionPercent={completionPercent}
           elapsedTime={formatElapsedTime(activePuzzle.startedAt)}
           tag="• DAILY CLASSIC"
