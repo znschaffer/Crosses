@@ -3,6 +3,7 @@ import PuzzlePreviewCard from '@/components/PuzzlePreviewCard'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { calculateDailyStreak } from '@/utils/streak'
+import { formatElapsedTime } from '@/utils/time'
 import { router } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
@@ -25,28 +26,6 @@ export default function HomeScreen() {
       )
     : 0
 
-  const getElapsedTime = (startedAt?: string) => {
-    if (!startedAt) return '0:00'
-
-    const start = new Date(startedAt).getTime()
-    const diffMs = Date.now() - start
-    const totalSeconds = Math.floor(diffMs / 1000)
-
-    const days = Math.floor(totalSeconds / (24 * 60 * 60))
-    const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60))
-    const minutes = Math.floor((totalSeconds % (60 * 60)) / 60)
-    const seconds = totalSeconds % 60
-
-    if (days > 0) {
-      return `${days}d ${hours}h`
-    }
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
-  }
-
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -68,7 +47,7 @@ export default function HomeScreen() {
           author={activePuzzle.puzzle.meta?.author ?? 'Unknown Author'}
           size={`${activePuzzle.puzzle.tiles.length}×${activePuzzle.puzzle.tiles[0]?.length ?? 0}`}
           completionPercent={completionPercent}
-          elapsedTime={getElapsedTime(activePuzzle.startedAt)}
+          elapsedTime={formatElapsedTime(activePuzzle.startedAt)}
           tag="• DAILY CLASSIC"
           onPress={() => router.navigate('/(tabs)/grid')}
         />
@@ -91,7 +70,8 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 40,
+    paddingTop: 24,
+    paddingHorizontal: 24,
     backgroundColor: '#F5F3EF',
   },
   headerRow: {
@@ -110,20 +90,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4A5565',
   },
-  profileIcon: {
-    width: 48,
-    height: 48,
-    margin: 10,
-    borderRadius: 22,
-    backgroundColor: '#F6DCD2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#E87756',
-  },
   sectionHeader: {
     marginTop: 28,
     marginBottom: 16,
@@ -136,12 +102,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0A0A0A',
     lineHeight: 28,
-  },
-  button: {
-    borderColor: 'black',
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 20,
   },
   emptyCard: {
     width: '100%',
@@ -160,11 +120,6 @@ const styles = StyleSheet.create({
     color: '#0A0A0A',
     marginBottom: 8,
   },
-  emptyText: {
-    fontSize: 14,
-    color: '#4A5565',
-    textAlign: 'center',
-  },
   loadButton: {
     marginTop: 20,
     backgroundColor: '#E87756',
@@ -174,7 +129,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   loadButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
