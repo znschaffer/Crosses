@@ -2,12 +2,15 @@ import HomeProfileMenu from '@/components/HomeProfileMenu'
 import PuzzlePreviewCard from '@/components/PuzzlePreviewCard'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
+import { calculateDailyStreak } from '@/utils/streak'
 import { router } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
-  const { activePuzzle } = usePuzzle()
-  const mockStreak = 12
+  const { activePuzzle, state } = usePuzzle()
+
+  const streak = calculateDailyStreak(state.puzzles)
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -45,7 +48,7 @@ export default function HomeScreen() {
         </View>
         <HomeProfileMenu />
       </View>
-      <StreakCard streak={mockStreak} />
+      <StreakCard streak={streak} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Today&apos;s Puzzle</Text>
