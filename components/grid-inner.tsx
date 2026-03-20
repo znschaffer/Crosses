@@ -9,8 +9,12 @@ import {
   isBlank,
 } from '@/utils/gridUtils'
 import { useHeaderHeight } from '@react-navigation/elements'
+import { useFocusEffect } from '@react-navigation/native'
+import Constants from 'expo-constants'
+import { router } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  Keyboard,
   KeyboardAvoidingView,
   LayoutChangeEvent,
   NativeSyntheticEvent,
@@ -20,14 +24,51 @@ import {
   Text,
   TextInput,
   TextInputKeyPressEventData,
+  TouchableOpacity,
   View,
 } from 'react-native'
 import { Cell } from './Cell'
 import ClueBar from './cluebar'
+import CompletionModal from './completion-modal'
 
 const MIN_CELL_SIZE = 20
 const MAX_CELL_SIZE = 84
 const SYNC_DEBOUNCE_MS = 700
+
+const runtimeExtra = Boolean(
+  (Constants.expoConfig?.extra as any)?.devToolsEnabled ??
+  (Constants.manifest as any)?.extra?.devToolsEnabled
+)
+const showDevTools = __DEV__ || runtimeExtra
+
+const onReset = (
+  total: number,
+  width: number,
+  puzzle: Props['puzzleState']['puzzle'],
+  dispatch: React.Dispatch<any>,
+  updateActivePuzzle: (partial: Partial<Props['puzzleState']>) => void
+): void => {
+  const emptyCellStates = Array.from({ length: total }, (_, i) => {
+    const r = Math.floor(i / width)
+    const c = i % width
+    if (isBlank(puzzle, r, c)) return { letter: '', isCorrect: null }
+    return { letter: '', isCorrect: null }
+  })
+  dispatch({
+    type: 'RESET',
+    cellStates: emptyCellStates,
+    selectedIndex: 0,
+    selectedDirection: 'across',
+  })
+  updateActivePuzzle({
+    userAnswers: new Array(total).fill(''),
+    currentIndex: 0,
+    direction: 'across',
+    complete: false,
+    finishedAt: null,
+    startedAt: new Date().toISOString(),
+  })
+}
 
 function buildInitialState(
   puzzleState: Props['puzzleState'],
@@ -88,11 +129,39 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const inputRef = useRef<TextInput | null>(null)
   const SENTINEL = 'a'
   const isHandlingBackspaceRef = useRef(false)
+  const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      if (puzzleState.complete || gridState.isPuzzleComplete) {
+        setShowCompletionModal(true)
+      }
+      return () => {}
+    }, [puzzleState.complete, gridState.isPuzzleComplete])
+  )
 
   useEffect(() => {
+    if (puzzleState.complete || gridState.isPuzzleComplete) {
+      setShowCompletionModal(true)
+    }
+  }, [puzzleState.complete, gridState.isPuzzleComplete])
+
+  useEffect(() => {
+    if (showCompletionModal) return
     const t = setTimeout(() => inputRef.current?.focus(), 10)
     return () => clearTimeout(t)
-  }, [gridState.selectedIndex, gridState.selectedDirection])
+  }, [
+    gridState.selectedIndex,
+    gridState.selectedDirection,
+    showCompletionModal,
+  ])
+
+  useEffect(() => {
+    if (!showCompletionModal) return
+
+    inputRef.current?.blur()
+    Keyboard.dismiss()
+  }, [showCompletionModal])
 
   const [gridAreaSize, setGridAreaSize] = useState<{
     w: number
@@ -160,6 +229,22 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       })
     }
   }, [updateActivePuzzle])
+
+  const prevCompleteRef = useRef<boolean>(false)
+  useEffect(() => {
+    const wasComplete = prevCompleteRef.current
+    const isCompleteNow = gridState.isPuzzleComplete === true
+
+    if (!wasComplete && isCompleteNow) {
+      const now = new Date().toISOString()
+      updateActivePuzzle({
+        complete: true,
+        finishedAt: now,
+        userAnswers: gridState.cellStates.map((s) => s.letter),
+      })
+    }
+    prevCompleteRef.current = isCompleteNow
+  }, [gridState.isPuzzleComplete, gridState.cellStates, updateActivePuzzle])
 
   const handleCellPress = useCallback(
     (idx: number) => {
@@ -244,6 +329,16 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
 
   const headerHeight = useHeaderHeight()
 
+  const toggleDevComplete = useCallback(() => {
+    const complete = !gridState.isPuzzleComplete
+
+    dispatch({ type: 'SET_PUZZLE_COMPLETE', complete })
+    updateActivePuzzle({
+      complete,
+      finishedAt: complete ? new Date().toISOString() : null,
+    })
+  }, [dispatch, gridState, updateActivePuzzle])
+
   return (
     <KeyboardAvoidingView
       style={styles.kavContainer}
@@ -252,10 +347,31 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     >
       {/* Grid area: fills all space between header and clue bar */}
       <View style={styles.gridArea} onLayout={onGridAreaLayout}>
-        {gridState.isPuzzleComplete && (
-          <View style={styles.completionBanner}>
-            <Text style={styles.completionText}>🎉 Puzzle Complete!</Text>
-          </View>
+        {gridState.isPuzzleComplete && showCompletionModal && (
+          <CompletionModal
+            puzzleState={puzzleState}
+            onReset={() =>
+              onReset(total, width, puzzle, dispatch, updateActivePuzzle)
+            }
+            onClose={() => {
+              setShowCompletionModal(false)
+              router.push('/(tabs)')
+            }}
+          />
+        )}
+
+        {showDevTools && (
+          <TouchableOpacity
+            onPress={toggleDevComplete}
+            style={[
+              styles.devToggle,
+              gridState.isPuzzleComplete ? styles.devToggleActive : null,
+            ]}
+          >
+            <Text style={styles.devToggleText}>
+              {gridState.isPuzzleComplete ? 'DEV: Reset' : 'DEV: Complete'}
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* Horizontal scroll for wide puzzles; vertical scroll disabled */}
@@ -373,4 +489,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   completionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  devToggle: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    zIndex: 9999,
+  },
+  devToggleActive: {
+    backgroundColor: '#aa3333',
+  },
+  devToggleText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 })

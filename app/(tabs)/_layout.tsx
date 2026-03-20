@@ -33,6 +33,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="archive"
+        options={{
+          title: 'Archive',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="archive" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="grid"
         options={{
           headerLeft: () => (
@@ -56,6 +66,15 @@ export default function TabLayout() {
           title: 'Import',
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="download" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="person" color={color} />
           ),
         }}
       />

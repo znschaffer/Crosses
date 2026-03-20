@@ -240,6 +240,7 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
         direction: 'across',
         startedAt: now,
         updatedAt: now,
+        finishedAt: null,
         complete: false,
         userAnswers: new Array(rows * cols).fill(''),
       },
