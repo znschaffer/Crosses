@@ -93,7 +93,6 @@ async function getTnyPuzzleDataForDate(date: Date) {
   }
 
   if (Platform.OS === 'web') {
-    // Web production currently goes through sync API, which supports latest only.
     return syncPuzzle({ source: 'tny' })
   }
 

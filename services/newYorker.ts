@@ -326,21 +326,10 @@ export async function downloadNewYorkerPuzzle(
   options: NewYorkerDownloadOptions = {}
 ) {
   const variant = options.variant ?? 'crossword'
-  console.log('[NewYorker] Starting download', {
-    variant,
-    date: options.date ?? 'latest',
-    proxy: options.proxyBaseUrl ?? 'none',
-  })
   const puzzlePageUrl = await getPuzzlePageUrl(options)
-  console.log('[NewYorker] Resolved puzzle page URL', puzzlePageUrl)
   const puzzlePageHtml = await fetchText(puzzlePageUrl, options.proxyBaseUrl)
   const puzzleId = extractPuzzleId(puzzlePageHtml)
   const metadata = extractPuzzleMetadata(puzzlePageHtml)
-  console.log('[NewYorker] Extracted puzzle metadata', {
-    puzzleId,
-    date: metadata.date ?? null,
-    themeTitle: metadata.themeTitle ?? null,
-  })
   const apiResponse = await fetchJson<NewYorkerApiResponse>(
     `${NEW_YORKER_API_BASE_URL}${puzzleId}`,
     options.proxyBaseUrl
@@ -358,7 +347,6 @@ export async function downloadNewYorkerPuzzle(
   )
 
   const puzBytes = puzEncode(toPuzPayload(crossword))
-  console.log('[NewYorker] Encoded .puz bytes', puzBytes.byteLength)
   return puzBytes.buffer.slice(
     puzBytes.byteOffset,
     puzBytes.byteOffset + puzBytes.byteLength

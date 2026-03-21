@@ -60,7 +60,6 @@ export default function ImportScreen() {
 
     if (enabled) {
       try {
-        console.log('[Import] Sync started', { source: 'tny' })
         const result = await syncRecentTnyPuzzles({
           days: 30,
           existingPuzzleIds: new Set(Object.keys(state.puzzles)),
@@ -70,14 +69,9 @@ export default function ImportScreen() {
           formatSyncSummary(result),
           result.failed > 0 ? 'info' : 'success'
         )
-        console.log('[Import] Puzzle loaded into app', {
-          source: 'tny',
-        })
-        // Puzzle saved to archives (AsyncStorage)
       } catch (error) {
         console.error('Failed to sync puzzle:', error)
         showAlert('Sync failed. Please try again.', 'error')
-        // Revert toggle on error
         setSyncSources((prev) => ({ ...prev, tny: false }))
       }
     }

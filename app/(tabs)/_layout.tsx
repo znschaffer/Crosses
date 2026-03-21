@@ -43,13 +43,11 @@ export default function TabLayout() {
 
       const shouldRun = await shouldRunTnyAutoSyncToday()
       if (!shouldRun) {
-        console.log('[AutoSync] Skipping tny auto-sync (already synced today)')
         showAlert('Auto-sync skipped: already synced today.', 'info')
         return
       }
 
       try {
-        console.log('[AutoSync] Running tny auto-sync')
         const result = await syncRecentTnyPuzzles({
           days: 30,
           existingPuzzleIds: new Set(Object.keys(state.puzzles)),
@@ -62,7 +60,6 @@ export default function TabLayout() {
           formatSyncSummary(result, 'Auto-sync complete'),
           result.failed > 0 ? 'info' : 'success'
         )
-        console.log('[AutoSync] tny auto-sync complete')
       } catch (error) {
         console.error('[AutoSync] tny auto-sync failed', error)
         showAlert('Auto-sync failed.', 'error')
