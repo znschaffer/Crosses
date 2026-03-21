@@ -13,6 +13,7 @@ type NewYorkerVariant = 'crossword' | 'mini'
 export type NewYorkerDownloadOptions = {
   date?: Date | string
   variant?: NewYorkerVariant
+  proxyBaseUrl?: string
 }
 
 type NewYorkerPuzzleMetadata = {
@@ -47,8 +48,17 @@ function getVariantConfig(variant: NewYorkerVariant) {
   }
 }
 
-async function fetchText(url: string) {
-  const response = await fetch(url)
+function buildProxyUrl(targetUrl: string, proxyBaseUrl?: string) {
+  if (!proxyBaseUrl) {
+    return targetUrl
+  }
+
+  const normalizedBase = proxyBaseUrl.replace(/\/$/, '')
+  return `${normalizedBase}/proxy?url=${encodeURIComponent(targetUrl)}`
+}
+
+async function fetchText(url: string, proxyBaseUrl?: string) {
+  const response = await fetch(buildProxyUrl(url, proxyBaseUrl))
 
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}`)
@@ -57,8 +67,8 @@ async function fetchText(url: string) {
   return response.text()
 }
 
-async function fetchJson<T>(url: string) {
-  const response = await fetch(url)
+async function fetchJson<T>(url: string, proxyBaseUrl?: string) {
+  const response = await fetch(buildProxyUrl(url, proxyBaseUrl))
 
   if (response.status === 403) {
     throw new Error('New Yorker puzzle API rejected the request')
@@ -162,9 +172,7 @@ function extractPuzzleMetadata(html: string): NewYorkerPuzzleMetadata {
   const descriptionMatch = html.match(
     /<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']*)["'][^>]*>/i
   )
-  const datetimeMatch = html.match(
-    /<time[^>]*datetime=["']([^"']+)["'][^>]*>/i
-  )
+  const datetimeMatch = html.match(/<time[^>]*datetime=["']([^"']+)["'][^>]*>/i)
 
   const description = descriptionMatch?.[1]
     ? decodeHtmlAttribute(descriptionMatch[1])
@@ -184,7 +192,9 @@ function extractPuzzleMetadata(html: string): NewYorkerPuzzleMetadata {
 }
 
 function stringifyClue(clue: Clue) {
-  return clue.metadata?.hint ? `${clue.body} // ${clue.metadata.hint}` : clue.body
+  return clue.metadata?.hint
+    ? `${clue.body} // ${clue.metadata.hint}`
+    : clue.body
 }
 
 function tileToSolution(tile: Tile) {
@@ -308,7 +318,7 @@ async function getPuzzlePageUrl(options: NewYorkerDownloadOptions) {
   }
 
   const { latestUrl, urlPathNeedle } = getVariantConfig(variant)
-  const html = await fetchText(latestUrl)
+  const html = await fetchText(latestUrl, options.proxyBaseUrl)
   return extractLatestPuzzleUrl(html, urlPathNeedle)
 }
 
@@ -316,12 +326,24 @@ export async function downloadNewYorkerPuzzle(
   options: NewYorkerDownloadOptions = {}
 ) {
   const variant = options.variant ?? 'crossword'
+  console.log('[NewYorker] Starting download', {
+    variant,
+    date: options.date ?? 'latest',
+    proxy: options.proxyBaseUrl ?? 'none',
+  })
   const puzzlePageUrl = await getPuzzlePageUrl(options)
-  const puzzlePageHtml = await fetchText(puzzlePageUrl)
+  console.log('[NewYorker] Resolved puzzle page URL', puzzlePageUrl)
+  const puzzlePageHtml = await fetchText(puzzlePageUrl, options.proxyBaseUrl)
   const puzzleId = extractPuzzleId(puzzlePageHtml)
   const metadata = extractPuzzleMetadata(puzzlePageHtml)
+  console.log('[NewYorker] Extracted puzzle metadata', {
+    puzzleId,
+    date: metadata.date ?? null,
+    themeTitle: metadata.themeTitle ?? null,
+  })
   const apiResponse = await fetchJson<NewYorkerApiResponse>(
-    `${NEW_YORKER_API_BASE_URL}${puzzleId}`
+    `${NEW_YORKER_API_BASE_URL}${puzzleId}`,
+    options.proxyBaseUrl
   )
 
   if (!apiResponse.data) {
@@ -336,12 +358,15 @@ export async function downloadNewYorkerPuzzle(
   )
 
   const puzBytes = puzEncode(toPuzPayload(crossword))
+  console.log('[NewYorker] Encoded .puz bytes', puzBytes.byteLength)
   return puzBytes.buffer.slice(
     puzBytes.byteOffset,
     puzBytes.byteOffset + puzBytes.byteLength
   )
 }
 
-export function downloadLatestNewYorkerPuzzle() {
-  return downloadNewYorkerPuzzle()
+export function downloadLatestNewYorkerPuzzle(
+  options: Omit<NewYorkerDownloadOptions, 'date'> = {}
+) {
+  return downloadNewYorkerPuzzle(options)
 }
