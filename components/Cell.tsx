@@ -1,4 +1,5 @@
 import { COLOR, Fonts } from '@/constants/theme'
+import { usePuzzle } from '@/contexts/PuzzleContext'
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
@@ -28,6 +29,9 @@ export const Cell = React.memo(
     edgeStyle,
     onPress,
   }: CellProps) {
+    const { state } = usePuzzle()
+    const autoCheck = state.settings.autoCheckEnabled
+
     if (isBlack) {
       return (
         <View
@@ -43,13 +47,11 @@ export const Cell = React.memo(
 
     const bg = isSelected
       ? COLOR.activeCellBg
-      : isActiveWord
-        ? COLOR.activeWordBg
-        : isCorrect === true
-          ? COLOR.correct
-          : isCorrect === false
-            ? COLOR.incorrect
-            : COLOR.white
+      : autoCheck && !isCorrect && letter
+        ? COLOR.incorrect
+        : isActiveWord
+          ? COLOR.activeWordBg
+          : COLOR.white
 
     const numSize = Math.max(6, size * 0.28)
     const letterSize = Math.max(14, size * 0.48)

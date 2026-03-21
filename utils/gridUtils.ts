@@ -26,6 +26,16 @@ export function getTileLetter(
   return t?.type === 'letter' ? t.letter : ''
 }
 
+export function indexToRC(
+  puzzle: CrosswordJSON,
+  idx: number
+): { r: number; c: number } {
+  const { width } = getGridDimensions(puzzle)
+  const r = Math.floor(idx / width)
+  const c = idx % width
+  return { r, c }
+}
+
 export function getGridDimensions(puzzle: CrosswordJSON) {
   const height = puzzle.tiles.length
   const width = puzzle.tiles[0]?.length ?? 0
