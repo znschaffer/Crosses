@@ -47,11 +47,13 @@ export const Cell = React.memo(
 
     const bg = isSelected
       ? COLOR.activeCellBg
-      : autoCheck && !isCorrect && letter
-        ? COLOR.incorrect
-        : isActiveWord
-          ? COLOR.activeWordBg
-          : COLOR.white
+      : autoCheck && !isCorrect && letter && isActiveWord
+        ? COLOR.activeIncorrect
+        : autoCheck && !isCorrect && letter && !isActiveWord
+          ? COLOR.incorrect
+          : isActiveWord
+            ? COLOR.activeWordBg
+            : COLOR.white
 
     const numSize = Math.max(6, size * 0.28)
     const letterSize = Math.max(14, size * 0.48)

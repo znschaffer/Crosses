@@ -36,6 +36,7 @@ export const COLOR = {
   circleStroke: '#888888',
   correct: '#d4edda',
   incorrect: '#f8d7da',
+  activeIncorrect: '#ffb7ba',
   clueNum: '#555',
   letterText: '#11181C',
 } as const
