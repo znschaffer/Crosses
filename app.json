@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Crosses",
-    "slug": "Crosses",
+    "slug": "crosses",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "crosses",
@@ -11,6 +11,41 @@
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleDocumentTypes": [
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
+          {
+            "CFBundleTypeName": "PUZ File",
+            "LSHandlerRank": "Owner",
+            "LSItemContentTypes": ["com.crosses.puz"]
+          },
           {
             "CFBundleTypeName": "PUZ File",
             "LSHandlerRank": "Owner",
@@ -25,9 +60,67 @@
             "UTTypeTagSpecification": {
               "public.filename-extension": ["puz"]
             }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
+          },
+          {
+            "UTTypeIdentifier": "com.crosses.puz",
+            "UTTypeDescription": "PUZ File",
+            "UTTypeConformsTo": ["public.data"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["puz"]
+            }
           }
-        ]
-      }
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.anonymous.Crosses"
     },
     "android": {
       "edgeToEdgeEnabled": true,
@@ -57,10 +150,23 @@
     "web": {
       "output": "static"
     },
-    "plugins": ["expo-router", "expo-web-browser"],
+    "plugins": ["expo-router", "expo-web-browser", "expo-font"],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "359cf29b-7ade-4106-8627-9401fefc3ce3"
+      }
+    },
+    "owner": "team-red",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/359cf29b-7ade-4106-8627-9401fefc3ce3"
     }
   }
 }

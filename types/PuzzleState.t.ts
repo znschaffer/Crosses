@@ -1,11 +1,12 @@
-import { Puzzle } from '@xwordly/xword-parser'
+import type { CrosswordJSON } from 'xd-crossword-tools'
 
 export interface PuzzleState {
-  puzzle: Puzzle
-  userAnswers: string[]
+  puzzle: CrosswordJSON
   currentIndex: number
   direction: 'across' | 'down'
-  startedAt: string | null
-  updatedAt: string | null
+  startedAt: string
+  updatedAt: string
+  finishedAt: string | null
   complete: boolean
+  userAnswers: string[]
 }

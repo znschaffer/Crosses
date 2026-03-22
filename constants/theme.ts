@@ -27,6 +27,19 @@ export const Colors = {
   },
 }
 
+export const COLOR = {
+  black: '#1a1a1a',
+  white: '#ffffff',
+  border: '#c0c0c0',
+  activeCellBg: '#f7da21',
+  activeWordBg: '#a7d8f0',
+  circleStroke: '#888888',
+  correct: '#d4edda',
+  incorrect: '#f8d7da',
+  clueNum: '#555',
+  letterText: '#11181C',
+} as const
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

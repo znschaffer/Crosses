@@ -1,7 +1,42 @@
 import { PuzzleState } from '@/types/PuzzleState.t'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Puzzle } from '@xwordly/xword-parser'
-import React, { createContext, useContext, useEffect, useReducer } from 'react'
+import { puzToXD, xdToJSON } from 'xd-crossword-tools'
+import type { CrosswordJSON } from 'xd-crossword-tools'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useRef,
+} from 'react'
+
+// ─── Schema version ───────────────────────────────────────────────────────────
+// Bump whenever the persisted shape changes — triggers a clean wipe on mismatch.
+const SCHEMA_VERSION = 3
+const SCHEMA_VERSION_KEY = '@puzzleSchemaVersion'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+export function getPuzzleId(puzzle: CrosswordJSON): string {
+  const title = puzzle.meta?.title ?? ''
+  const author = puzzle.meta?.author ?? ''
+  const rows = puzzle.tiles?.length ?? 0
+  const cols = puzzle.tiles?.[0]?.length ?? 0
+  return `${title}::${author}::${rows}x${cols}`
+}
+
+/**
+ * Parse a .puz ArrayBuffer into a CrosswordJSON.
+ * xd-crossword-tools produces plain JSON objects — no class instances —
+ * so the result survives JSON.stringify/parse safely.
+ */
+export function parsePuzBuffer(buffer: ArrayBuffer): CrosswordJSON {
+  const bytes = new Uint8Array(buffer)
+  const xd = puzToXD(bytes as unknown as Parameters<typeof puzToXD>[0])
+  return xdToJSON(xd)
+}
+
+// ─── State / Actions ──────────────────────────────────────────────────────────
 
 type State = {
   puzzles: Record<string, PuzzleState>
@@ -19,162 +54,207 @@ type Action =
 const initialState: State = {
   puzzles: {},
   activePuzzleId: null,
-  loading: false,
+  loading: true,
 }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'INIT_LIBRARY': {
+    case 'INIT_LIBRARY':
       return { ...state, puzzles: action.puzzles, loading: false }
-    }
-    case 'ADD_PUZZLE': {
+
+    case 'ADD_PUZZLE':
       return {
         ...state,
-        puzzles: {
-          ...state.puzzles,
-          [action.id]: action.state,
-        },
+        puzzles: { ...state.puzzles, [action.id]: action.state },
         activePuzzleId: action.id,
       }
-    }
-    case 'SET_ACTIVE_PUZZLE': {
+
+    case 'SET_ACTIVE_PUZZLE':
       return { ...state, activePuzzleId: action.id }
-    }
+
     case 'UPDATE_ACTIVE_PUZZLE': {
       if (!state.activePuzzleId) return state
-
-      const currentActive = state.puzzles[state.activePuzzleId]
-
-      const updatedState = {
-        ...currentActive,
-        ...action.partial,
-        updatedAt: new Date().toISOString(),
-      }
-
+      const current = state.puzzles[state.activePuzzleId]
+      if (!current) return state
       return {
         ...state,
         puzzles: {
           ...state.puzzles,
-          [state.activePuzzleId]: updatedState,
+          [state.activePuzzleId]: {
+            ...current,
+            ...action.partial,
+            updatedAt: new Date().toISOString(),
+          },
         },
       }
     }
-    case 'SET_LOADING': {
+
+    case 'SET_LOADING':
       return { ...state, loading: action.loading }
-    }
+
     default:
       return state
   }
 }
 
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+const STORAGE_KEY_PREFIX = '@puzzleProgress:'
+
+function storageKey(puzzleId: string) {
+  return `${STORAGE_KEY_PREFIX}${puzzleId}`
+}
+
+async function checkAndMigrateSchema(): Promise<void> {
+  const stored = await AsyncStorage.getItem(SCHEMA_VERSION_KEY)
+  const storedVersion = stored ? parseInt(stored, 10) : 0
+  if (storedVersion !== SCHEMA_VERSION) {
+    const keys = await AsyncStorage.getAllKeys()
+    const puzzleKeys = keys.filter(
+      (k) => k.startsWith(STORAGE_KEY_PREFIX) || k.startsWith('@puzzleState:')
+    )
+    if (puzzleKeys.length > 0) await AsyncStorage.multiRemove(puzzleKeys)
+    await AsyncStorage.setItem(SCHEMA_VERSION_KEY, String(SCHEMA_VERSION))
+    console.log(
+      `[PuzzleContext] Schema v${storedVersion} → v${SCHEMA_VERSION}, cleared ${puzzleKeys.length} entries`
+    )
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────────
+
 const PuzzleContext = createContext<{
   state: State
   activePuzzle: PuzzleState | null
-  loadPuzzleFile: (p: Puzzle) => Promise<void>
+  loadPuzzleFile: (buffer: ArrayBuffer) => Promise<void>
   setActivePuzzle: (id: string) => void
   updateActivePuzzle: (s: Partial<PuzzleState>) => void
 } | null>(null)
 
-const STORAGE_KEY_PREFIX = '@puzzleState:'
+// ─── Provider ─────────────────────────────────────────────────────────────────
 
-function getStorageKey(puzzleId: string) {
-  return `${STORAGE_KEY_PREFIX}${puzzleId}`
-}
-
-/**
- * Provider component that wraps the application (or a portion of it) to supply
- * the puzzle state, along with functions to mutate and persist that state.
- *
- * Automatically handles saving the current puzzle's progress to `AsyncStorage`
- * whenever the state updates.
- *
- */
 export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
-}: {
-  children: React.ReactNode
 }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
 
+  // Load persisted library on mount
   useEffect(() => {
-    const loadLibrary = async () => {
+    ;(async () => {
       try {
+        await checkAndMigrateSchema()
         const keys = await AsyncStorage.getAllKeys()
         const puzzleKeys = keys.filter((k) => k.startsWith(STORAGE_KEY_PREFIX))
         if (puzzleKeys.length === 0) {
           dispatch({ type: 'INIT_LIBRARY', puzzles: {} })
           return
         }
-
-        const keyValues = await AsyncStorage.multiGet(puzzleKeys)
-        const loadedPuzzles: Record<string, PuzzleState> = {}
-        keyValues.forEach(([key, value]) => {
-          if (value) {
-            const puzzleId = key.replace(STORAGE_KEY_PREFIX, '')
-            loadedPuzzles[puzzleId] = JSON.parse(value)
+        const pairs = await AsyncStorage.multiGet(puzzleKeys)
+        const loaded: Record<string, PuzzleState> = {}
+        pairs.forEach(([key, value]) => {
+          if (!value) return
+          try {
+            const ps: PuzzleState = JSON.parse(value)
+            if (!ps.puzzle) return
+            loaded[key.replace(STORAGE_KEY_PREFIX, '')] = ps
+          } catch {
+            console.warn(`[PuzzleContext] Skipping corrupt entry "${key}"`)
           }
         })
-
-        dispatch({ type: 'INIT_LIBRARY', puzzles: loadedPuzzles })
+        dispatch({ type: 'INIT_LIBRARY', puzzles: loaded })
       } catch (e) {
-        console.error('Failed to load puzzle library: ', e)
+        console.error('[PuzzleContext] Failed to load library:', e)
         dispatch({ type: 'INIT_LIBRARY', puzzles: {} })
       }
-    }
-    loadLibrary()
+    })()
   }, [])
 
+  // Debounced persist — CrosswordJSON is plain JSON, safe to stringify
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
-    const saveActivePuzzle = async () => {
-      if (!state.activePuzzleId) return
-
-      const activeState = state.puzzles[state.activePuzzleId]
+    if (!state.activePuzzleId) return
+    const id = state.activePuzzleId
+    const active = state.puzzles[id]
+    if (!active) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
       try {
-        await AsyncStorage.setItem(
-          getStorageKey(state.activePuzzleId),
-          JSON.stringify(activeState)
-        )
+        await AsyncStorage.setItem(storageKey(id), JSON.stringify(active))
       } catch (e) {
-        console.warn('Failed to save active puzzle: ', e)
+        console.warn('[PuzzleContext] Failed to save:', e)
+      }
+    }, 1000)
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
       }
     }
-    saveActivePuzzle()
   }, [state.puzzles, state.activePuzzleId])
 
-  const loadPuzzleFile = async (puzzle: Puzzle) => {
-    const puzzleId = puzzle.title || `Unnamed_${Date.now()}`
+  // ── Public API ──────────────────────────────────────────────────────────────
 
-    if (state.puzzles[puzzleId]) {
-      dispatch({ type: 'SET_ACTIVE_PUZZLE', id: puzzleId })
+  const loadPuzzleFile = async (buffer: ArrayBuffer) => {
+    let puzzle: CrosswordJSON
+    try {
+      puzzle = parsePuzBuffer(buffer)
+    } catch (e) {
+      console.error('[PuzzleContext] Failed to parse .puz file:', e)
+      throw e
+    }
+
+    const id = getPuzzleId(puzzle)
+    console.log('Puzzle loaded successfully:', puzzle.meta?.title)
+
+    // Already in memory — just activate
+    if (state.puzzles[id]) {
+      dispatch({ type: 'SET_ACTIVE_PUZZLE', id })
       return
     }
 
-    const now = new Date().toISOString()
-    const totalCells = puzzle.grid.width * puzzle.grid.height
-
-    const newState: PuzzleState = {
-      puzzle: puzzle,
-      currentIndex: 0,
-      direction: 'across',
-      startedAt: now,
-      updatedAt: now,
-      complete: false,
-      userAnswers: new Array(totalCells).fill(''),
+    // Check AsyncStorage for a saved session
+    try {
+      const raw = await AsyncStorage.getItem(storageKey(id))
+      if (raw) {
+        const saved: PuzzleState = JSON.parse(raw)
+        if (saved.puzzle) {
+          dispatch({ type: 'ADD_PUZZLE', id, state: saved })
+          return
+        }
+      }
+    } catch {
+      // Corrupt entry — fall through to fresh state
     }
 
-    dispatch({ type: 'ADD_PUZZLE', id: puzzleId, state: newState })
+    // Brand new puzzle
+    const now = new Date().toISOString()
+    const rows = puzzle.tiles.length
+    const cols = puzzle.tiles[0]?.length ?? 0
+
+    dispatch({
+      type: 'ADD_PUZZLE',
+      id,
+      state: {
+        puzzle,
+        currentIndex: 0,
+        direction: 'across',
+        startedAt: now,
+        updatedAt: now,
+        finishedAt: null,
+        complete: false,
+        userAnswers: new Array(rows * cols).fill(''),
+      },
+    })
   }
 
-  const setActivePuzzle = (id: string) => {
+  const setActivePuzzle = (id: string) =>
     dispatch({ type: 'SET_ACTIVE_PUZZLE', id })
-  }
 
-  const updateActivePuzzle = (partial: Partial<PuzzleState>) => {
+  const updateActivePuzzle = (partial: Partial<PuzzleState>) =>
     dispatch({ type: 'UPDATE_ACTIVE_PUZZLE', partial })
-  }
 
   const activePuzzle = state.activePuzzleId
-    ? state.puzzles[state.activePuzzleId]
+    ? (state.puzzles[state.activePuzzleId] ?? null)
     : null
 
   return (
