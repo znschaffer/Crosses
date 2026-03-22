@@ -29,6 +29,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="archive"
+        options={{
+          title: 'Archive',
+          tabBarIcon: ({ color }) => (
+            <Ionicons size={28} name="archive" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="import"
         options={{
           title: 'Import',
