@@ -6,7 +6,7 @@ import { calculateDailyStreak } from '@/utils/streak'
 import { formatElapsedTime } from '@/utils/time'
 import { router } from 'expo-router'
 import { useMemo } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const { activePuzzle, state } = usePuzzle()
@@ -38,7 +38,7 @@ export default function HomeScreen() {
   })
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>Crosses</Text>
@@ -74,14 +74,14 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       )}
-    </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 24,
+    paddingTop: 48,
     paddingHorizontal: 24,
     backgroundColor: '#F5F3EF',
   },
