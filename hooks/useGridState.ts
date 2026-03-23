@@ -92,15 +92,24 @@ function createReducer(
 
         const isPuzzleComplete = checkComplete(cellStates, puzzle)
 
+        const currentWordCells = getWordIndices(r, c, dir, puzzle)
+
+        const emptyCellsInWord = currentWordCells.filter(
+          (i) => !cellStates[i]?.letter
+        )
+
         let nextIndex = idx
-        const inWord = advanceInWord(idx, dir, puzzle)
-        if (inWord !== idx) {
-          nextIndex = inWord
+
+        if (emptyCellsInWord.length > 0) {
+          const inWord = advanceInWord(idx, dir, puzzle)
+          if (inWord !== idx && !cellStates[inWord]?.letter) {
+            nextIndex = inWord
+          } else {
+            nextIndex = emptyCellsInWord[0]
+          }
         } else {
           const currentClueNum =
-            dir === 'across'
-              ? wordMap.acrossClue[Math.floor(idx / width)][idx % width]
-              : wordMap.downClue[Math.floor(idx / width)][idx % width]
+            dir === 'across' ? wordMap.acrossClue[r][c] : wordMap.downClue[r][c]
 
           const clueList =
             dir === 'across' ? puzzle.clues?.across : puzzle.clues?.down
