@@ -11,8 +11,8 @@ import {
   formatSyncSummary,
   loadSyncSources,
   markTnyAutoSyncRanToday,
-  syncRecentTnyPuzzles,
   shouldRunTnyAutoSyncToday,
+  syncRecentTnyPuzzles,
 } from '@/services/syncSettings'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { TouchableOpacity, View } from 'react-native'
@@ -93,7 +93,6 @@ export default function TabLayout() {
           name="archive"
           options={{
             title: 'Archive',
-            headerShown: false,
             tabBarIcon: ({ color }) => (
               <Ionicons size={28} name="archive" color={color} />
             ),
