@@ -36,7 +36,6 @@ export default function TabLayout() {
         name="archive"
         options={{
           title: 'Archive',
-          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="archive" color={color} />
           ),
