@@ -7,6 +7,8 @@ export interface PuzzleState {
   startedAt: string
   updatedAt: string
   finishedAt: string | null
+  activeMs: number
+  focusStartedAt: string | null
   complete: boolean
   userAnswers: string[]
 }

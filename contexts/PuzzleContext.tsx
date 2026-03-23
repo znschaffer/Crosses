@@ -4,6 +4,7 @@ import { puzToXD, xdToJSON } from 'xd-crossword-tools'
 import type { CrosswordJSON } from 'xd-crossword-tools'
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useReducer,
@@ -12,8 +13,9 @@ import React, {
 
 // ─── Schema version ───────────────────────────────────────────────────────────
 // Bump whenever the persisted shape changes — triggers a clean wipe on mismatch.
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 const SCHEMA_VERSION_KEY = '@puzzleSchemaVersion'
+const SETTINGS_KEY = '@crossesSettings'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,11 +39,17 @@ export function parsePuzBuffer(buffer: ArrayBuffer): CrosswordJSON {
 }
 
 // ─── State / Actions ──────────────────────────────────────────────────────────
+type Settings = {
+  timerEnabled: boolean
+  hintsEnabled: boolean
+  autoCheckEnabled: boolean
+}
 
 type State = {
   puzzles: Record<string, PuzzleState>
   activePuzzleId: string | null
   loading: boolean
+  settings: Settings
 }
 
 type Action =
@@ -50,11 +58,17 @@ type Action =
   | { type: 'SET_ACTIVE_PUZZLE'; id: string }
   | { type: 'UPDATE_ACTIVE_PUZZLE'; partial: Partial<PuzzleState> }
   | { type: 'SET_LOADING'; loading: boolean }
+  | { type: 'SET_SETTING'; partial: Partial<Settings> }
 
 const initialState: State = {
   puzzles: {},
   activePuzzleId: null,
   loading: true,
+  settings: {
+    timerEnabled: true,
+    autoCheckEnabled: false,
+    hintsEnabled: false,
+  },
 }
 
 function reducer(state: State, action: Action): State {
@@ -71,6 +85,15 @@ function reducer(state: State, action: Action): State {
 
     case 'SET_ACTIVE_PUZZLE':
       return { ...state, activePuzzleId: action.id }
+
+    case 'SET_SETTING':
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          ...action.partial,
+        },
+      }
 
     case 'UPDATE_ACTIVE_PUZZLE': {
       if (!state.activePuzzleId) return state
@@ -129,6 +152,7 @@ const PuzzleContext = createContext<{
   loadPuzzleFile: (buffer: ArrayBuffer) => Promise<void>
   setActivePuzzle: (id: string) => void
   updateActivePuzzle: (s: Partial<PuzzleState>) => void
+  setSettings: (s: Partial<Settings>) => void
 } | null>(null)
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -168,6 +192,35 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     })()
   }, [])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const raw = await AsyncStorage.getItem(SETTINGS_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (parsed) {
+            dispatch({
+              type: 'SET_SETTING',
+              partial: parsed,
+            })
+          }
+        }
+      } catch (e) {
+        console.warn('[PuzzleContext] Failed to load settings: ', e)
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings))
+      } catch (e) {
+        console.warn('[PuzzleContext] Failed to save settings: ', e)
+      }
+    })()
+  }, [state.settings])
 
   // Debounced persist — CrosswordJSON is plain JSON, safe to stringify
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -240,6 +293,8 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
         direction: 'across',
         startedAt: now,
         updatedAt: now,
+        activeMs: 0,
+        focusStartedAt: null,
         finishedAt: null,
         complete: false,
         userAnswers: new Array(rows * cols).fill(''),
@@ -247,11 +302,25 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
     })
   }
 
-  const setActivePuzzle = (id: string) =>
-    dispatch({ type: 'SET_ACTIVE_PUZZLE', id })
+  const setActivePuzzle = useCallback(
+    (id: string) => dispatch({ type: 'SET_ACTIVE_PUZZLE', id }),
+    [dispatch]
+  )
 
-  const updateActivePuzzle = (partial: Partial<PuzzleState>) =>
-    dispatch({ type: 'UPDATE_ACTIVE_PUZZLE', partial })
+  const updateActivePuzzle = useCallback(
+    (partial: Partial<PuzzleState>) =>
+      dispatch({ type: 'UPDATE_ACTIVE_PUZZLE', partial }),
+    [dispatch]
+  )
+
+  const setSettings = useCallback(
+    (partial: Partial<Settings>) =>
+      dispatch({
+        type: 'SET_SETTING',
+        partial,
+      }),
+    [dispatch]
+  )
 
   const activePuzzle = state.activePuzzleId
     ? (state.puzzles[state.activePuzzleId] ?? null)
@@ -265,6 +334,7 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
         loadPuzzleFile,
         setActivePuzzle,
         updateActivePuzzle,
+        setSettings,
       }}
     >
       {children}

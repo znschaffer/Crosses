@@ -20,14 +20,15 @@ export default function CompletionModal({
   onClose: () => void
 }) {
   const formatDurationAdaptive = (
-    start?: string | null,
-    end?: string | null
+    activeMs?: number | null,
+    focusStartedAt?: string | null
   ) => {
-    if (!start || !end) return '—'
-    let secs = Math.max(
-      0,
-      Math.round((new Date(end).getTime() - new Date(start).getTime()) / 1000)
-    )
+    if (activeMs == null && !focusStartedAt) return '-'
+    const totalActiveMs =
+      (activeMs ?? 0) +
+      (focusStartedAt ? Date.now() - new Date(focusStartedAt).getTime() : 0)
+
+    let secs = Math.max(0, Math.round(totalActiveMs / 1000))
 
     if (secs < 60) {
       return `${secs}s`
@@ -51,8 +52,8 @@ export default function CompletionModal({
   }
 
   const elapsed = formatDurationAdaptive(
-    puzzleState.startedAt,
-    puzzleState.finishedAt
+    puzzleState.activeMs,
+    puzzleState.focusStartedAt
   )
 
   const tint = Colors.light.tint

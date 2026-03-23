@@ -4,7 +4,9 @@ import {
   buildWordMap,
   checkComplete,
   getGridDimensions,
+  getTileLetter,
   getWordIndices,
+  indexToRC,
   isBlank,
   retreatSelection,
 } from '@/utils/gridUtils'
@@ -83,7 +85,10 @@ function createReducer(
         const dir = state.selectedDirection
 
         const cellStates = state.cellStates.slice()
-        cellStates[idx] = { letter: action.letter, isCorrect: null }
+
+        const { r, c } = indexToRC(puzzle, idx)
+        const isCellCorrect = action.letter === getTileLetter(puzzle, r, c)
+        cellStates[idx] = { letter: action.letter, isCorrect: isCellCorrect }
 
         const isPuzzleComplete = checkComplete(cellStates, puzzle)
 
