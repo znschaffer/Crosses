@@ -1,17 +1,73 @@
+import { TimedAlert, type TimedAlertState } from '@/components/timed-alert'
 import { router, Tabs } from 'expo-router'
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import { HapticTab } from '@/components/haptic-tab'
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { Colors } from '@/constants/theme'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { useColorScheme } from '@/hooks/use-color-scheme'
+import {
+  formatSyncSummary,
+  loadSyncSources,
+  markTnyAutoSyncRanToday,
+  syncRecentTnyPuzzles,
+  shouldRunTnyAutoSyncToday,
+} from '@/services/syncSettings'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { TouchableOpacity, View } from 'react-native'
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()
-  const { activePuzzle } = usePuzzle()
+  const { activePuzzle, loadPuzzleFile, state } = usePuzzle()
+  const autoSyncTriedRef = useRef(false)
+  const [alert, setAlert] = useState<TimedAlertState | null>(null)
+
+  const showAlert = (message: string, tone: TimedAlertState['tone']) => {
+    setAlert({ id: Date.now(), message, tone })
+  }
+
+  useEffect(() => {
+    if (autoSyncTriedRef.current) {
+      return
+    }
+
+    autoSyncTriedRef.current = true
+
+    const runAutoSync = async () => {
+      const syncSources = await loadSyncSources()
+
+      if (!syncSources.tny) {
+        return
+      }
+
+      const shouldRun = await shouldRunTnyAutoSyncToday()
+      if (!shouldRun) {
+        showAlert('Auto-sync skipped: already synced today.', 'info')
+        return
+      }
+
+      try {
+        const result = await syncRecentTnyPuzzles({
+          days: 30,
+          existingPuzzleIds: new Set(Object.keys(state.puzzles)),
+          loadPuzzleFile,
+        })
+        if (!__DEV__) {
+          await markTnyAutoSyncRanToday()
+        }
+        showAlert(
+          formatSyncSummary(result, 'Auto-sync complete'),
+          result.failed > 0 ? 'info' : 'success'
+        )
+      } catch (error) {
+        console.error('[AutoSync] tny auto-sync failed', error)
+        showAlert('Auto-sync failed.', 'error')
+      }
+    }
+
+    runAutoSync()
+  }, [loadPuzzleFile, state.puzzles])
 
   return (
     <View style={{ flex: 1 }}>
@@ -37,6 +93,10 @@ export default function TabLayout() {
           name="archive"
           options={{
             title: 'Archive',
+<<<<<<< archive
+=======
+            headerShown: false,
+>>>>>>> main
             tabBarIcon: ({ color }) => (
               <Ionicons size={28} name="archive" color={color} />
             ),
@@ -79,6 +139,10 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+<<<<<<< archive
+=======
+      <TimedAlert alert={alert} onHide={() => setAlert(null)} />
+>>>>>>> main
     </View>
   )
 }
