@@ -54,6 +54,9 @@ export default function TabLayout() {
               <Ionicons name="chevron-back" size={24} color="#197602" />
             </TouchableOpacity>
           ),
+
+          headerTitleStyle: { flexShrink: 1, textAlign: 'center' },
+          headerTitleContainerStyle: { flex: 1, paddingRight: 30 },
           title: activePuzzle?.puzzle.meta?.title ?? 'Grid',
           tabBarIcon: ({ color }) => (
             <Ionicons size={28} name="play" color={color} />

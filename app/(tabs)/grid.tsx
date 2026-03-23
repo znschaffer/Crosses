@@ -40,7 +40,9 @@ export default function GridScreen() {
             style={{
               marginRight: 12,
               fontSize: 15,
+              textAlign: 'center',
               fontWeight: '600',
+              minWidth: '10%',
               color: '#111',
             }}
           >
