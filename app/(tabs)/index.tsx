@@ -3,7 +3,7 @@ import PuzzlePreviewCard from '@/components/PuzzlePreviewCard'
 import StreakCard from '@/components/StreakCard'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import { calculateDailyStreak } from '@/utils/streak'
-import { formatElapsedTime } from '@/utils/time'
+import { formatMsAsClock } from '@/utils/time'
 import { router } from 'expo-router'
 import { useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
@@ -58,7 +58,7 @@ export default function HomeScreen() {
           author={activePuzzle.puzzle.meta?.author ?? 'Unknown Author'}
           size={puzzleSize}
           completionPercent={completionPercent}
-          elapsedTime={formatElapsedTime(activePuzzle.startedAt)}
+          elapsedTime={formatMsAsClock(activePuzzle.activeMs)}
           tag="• DAILY CLASSIC"
           onPress={() => router.navigate('/(tabs)/grid')}
         />
