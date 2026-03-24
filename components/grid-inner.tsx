@@ -16,6 +16,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppState,
   AppStateStatus,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   LayoutChangeEvent,
@@ -212,6 +213,7 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     w: number
     h: number
   } | null>(null)
+
   const onGridAreaLayout = useCallback((e: LayoutChangeEvent) => {
     const { width: w, height: h } = e.nativeEvent.layout
     setGridAreaSize({ w, h })
@@ -220,8 +222,13 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const cellSize = useMemo(() => {
     if (!gridAreaSize) return MIN_CELL_SIZE
 
+    const safeHeight = Math.min(
+      gridAreaSize.h,
+      Dimensions.get('window').height * 0.43
+    )
+
     const cellFromWidth = gridAreaSize.w / Math.max(1, width)
-    const cellFromHeight = gridAreaSize.h / Math.max(1, height)
+    const cellFromHeight = safeHeight / Math.max(1, height)
     const exact = Math.min(cellFromWidth, cellFromHeight)
 
     return Math.max(MIN_CELL_SIZE, Math.min(MAX_CELL_SIZE, exact))

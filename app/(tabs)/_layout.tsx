@@ -110,7 +110,6 @@ export default function TabLayout() {
                 <Ionicons name="chevron-back" size={24} color="#197602" />
               </TouchableOpacity>
             ),
-            title: activePuzzle?.puzzle.meta?.title ?? 'Grid',
             tabBarIcon: ({ color }) => (
               <Ionicons size={28} name="play" color={color} />
             ),
