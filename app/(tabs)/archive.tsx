@@ -73,7 +73,7 @@ function matchesFilters(
 }
 
 export default function ArchiveScreen() {
-  const { state, setActivePuzzle } = usePuzzle()
+  const { state, setActivePuzzle, removePuzzle } = usePuzzle()
   const [query, setQuery] = useState('')
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [filterVisible, setFilterVisible] = useState(false)
@@ -133,7 +133,12 @@ export default function ArchiveScreen() {
         keyExtractor={([id]) => id}
         contentContainerStyle={styles.list}
         renderItem={({ item: [id, puzzleState] }) => (
-          <PuzzleCard id={id} state={puzzleState} onPress={handleCardPress} />
+          <PuzzleCard
+            id={id}
+            state={puzzleState}
+            onPress={handleCardPress}
+            removePuzzle={removePuzzle}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>

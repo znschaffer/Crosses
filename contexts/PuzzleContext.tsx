@@ -58,6 +58,8 @@ type Action =
   | { type: 'SET_ACTIVE_PUZZLE'; id: string }
   | { type: 'UPDATE_ACTIVE_PUZZLE'; partial: Partial<PuzzleState> }
   | { type: 'SET_LOADING'; loading: boolean }
+  | { type: 'REMOVE_PUZZLE'; id: string }
+  | { type: 'REMOVE_ALL_PUZZLES' }
   | { type: 'SET_SETTING'; partial: Partial<Settings> }
 
 const initialState: State = {
@@ -81,6 +83,21 @@ function reducer(state: State, action: Action): State {
         ...state,
         puzzles: { ...state.puzzles, [action.id]: action.state },
         activePuzzleId: action.id,
+      }
+
+    case 'REMOVE_PUZZLE':
+      const filteredPuzzles = Object.entries(state.puzzles).filter(
+        (puz) => puz[0] !== action.id
+      )
+      return {
+        ...state,
+        puzzles: Object.fromEntries(filteredPuzzles),
+      }
+
+    case 'REMOVE_ALL_PUZZLES':
+      return {
+        ...state,
+        puzzles: Object.fromEntries([]),
       }
 
     case 'SET_ACTIVE_PUZZLE':
@@ -150,6 +167,7 @@ const PuzzleContext = createContext<{
   state: State
   activePuzzle: PuzzleState | null
   loadPuzzleFile: (buffer: ArrayBuffer) => Promise<void>
+  removePuzzle: (id: string) => void
   setActivePuzzle: (id: string) => void
   updateActivePuzzle: (s: Partial<PuzzleState>) => void
   setSettings: (s: Partial<Settings>) => void
@@ -247,6 +265,14 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ── Public API ──────────────────────────────────────────────────────────────
 
+  const removePuzzle = async (id: string) => {
+    try {
+      await AsyncStorage.removeItem(storageKey(id))
+      dispatch({ type: 'REMOVE_PUZZLE', id })
+    } catch (e) {
+      console.error('[PuzzleContext] Failed to remove puzzle: ', e)
+    }
+  }
   const loadPuzzleFile = async (buffer: ArrayBuffer) => {
     let puzzle: CrosswordJSON
     try {
@@ -332,6 +358,7 @@ export const PuzzleProvider: React.FC<{ children: React.ReactNode }> = ({
         state,
         activePuzzle,
         loadPuzzleFile,
+        removePuzzle,
         setActivePuzzle,
         updateActivePuzzle,
         setSettings,

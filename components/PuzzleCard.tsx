@@ -1,4 +1,5 @@
 import { PuzzleState } from '@/types/PuzzleState.t'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
@@ -37,6 +38,7 @@ interface PuzzleCardProps {
   id: string
   state: PuzzleState
   onPress: (id: string) => void
+  removePuzzle: (id: string) => void
 }
 
 const MiniGrid = React.memo(({ puzzle }: { puzzle: PuzzleState['puzzle'] }) => {
@@ -86,7 +88,12 @@ const MiniGrid = React.memo(({ puzzle }: { puzzle: PuzzleState['puzzle'] }) => {
 })
 MiniGrid.displayName = 'MiniGrid'
 
-export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
+export function PuzzleCard({
+  id,
+  state,
+  removePuzzle,
+  onPress,
+}: PuzzleCardProps) {
   const { puzzle } = state
   const status = getCompletionStatus(state)
   const statusConfig = STATUS_CONFIG[status]
@@ -119,22 +126,27 @@ export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
             by {author}
           </Text>
         ) : null}
-        <View style={styles.tags}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{getSizeLabel(rows, cols)}</Text>
-          </View>
-          {date ? (
+        <View style={styles.bottom}>
+          <View style={styles.tags}>
             <View style={styles.tag}>
-              <Text style={[styles.tagText, { color: '#e87756' }]}>
-                {formatDate(date)}
+              <Text style={styles.tagText}>{getSizeLabel(rows, cols)}</Text>
+            </View>
+            {date ? (
+              <View style={styles.tag}>
+                <Text style={[styles.tagText, { color: '#e87756' }]}>
+                  {formatDate(date)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.tag}>
+              <Text style={[styles.tagText, { color: statusConfig.color }]}>
+                {statusConfig.label}
               </Text>
             </View>
-          ) : null}
-          <View style={styles.tag}>
-            <Text style={[styles.tagText, { color: statusConfig.color }]}>
-              {statusConfig.label}
-            </Text>
           </View>
+          <TouchableOpacity hitSlop={10} onPress={() => removePuzzle(id)}>
+            <Ionicons name="trash" size={16} />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -194,6 +206,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
+  },
+  bottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   tagText: {
     fontSize: 11,
