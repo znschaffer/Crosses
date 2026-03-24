@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { View, Text } from 'react-native'
+import { View, Text, Pressable, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { usePuzzle } from '@/contexts/PuzzleContext'
 import GridInner from '@/components/grid-inner'
@@ -35,15 +35,36 @@ export default function GridScreen() {
       const total = base + running
       const label = formatMsAsClock(total)
       navigation.setOptions({
+        headerTitleContainerStyle: {
+          flex: 1,
+          justifyContent: 'center',
+        },
+        headerTitle: () => (
+          <Pressable
+            onPress={() => {
+              Alert.alert(
+                activePuzzle?.puzzle?.meta?.title ?? 'Untitled',
+                `By ${activePuzzle?.puzzle?.meta?.author ?? 'Unknown'}`
+              )
+            }}
+            style={{ height: '100%', justifyContent: 'center' }}
+          >
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 17, fontWeight: '600', color: '#000' }}
+            >
+              {activePuzzle?.puzzle?.meta?.title || 'Puzzle'}
+            </Text>
+          </Pressable>
+        ),
         headerRight: () => (
           <Text
             style={{
-              marginRight: 12,
               fontSize: 15,
-              textAlign: 'center',
               fontWeight: '600',
-              minWidth: '10%',
+              padding: 12,
               color: '#111',
+              fontVariant: ['tabular-nums'], // Keeps timer width steady
             }}
           >
             {label}
@@ -58,6 +79,7 @@ export default function GridScreen() {
     const id = setInterval(pushHeader, 1000)
     return () => clearInterval(id)
   }, [activePuzzle, navigation, state?.settings?.timerEnabled])
+
   if (!activePuzzle) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
