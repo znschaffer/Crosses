@@ -1,4 +1,6 @@
 import { PuzzleState } from '@/types/PuzzleState.t'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 type CompletionStatus = 'complete' | 'in-progress' | 'to-do'
@@ -36,9 +38,62 @@ interface PuzzleCardProps {
   id: string
   state: PuzzleState
   onPress: (id: string) => void
+  removePuzzle: (id: string) => void
 }
 
-export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
+const MiniGrid = React.memo(({ puzzle }: { puzzle: PuzzleState['puzzle'] }) => {
+  const rows = puzzle.tiles.length
+  const cols = puzzle.tiles[0]?.length ?? 0
+  if (rows === 0 || cols === 0) return null
+
+  const size = 60
+  const maxDim = Math.max(rows, cols)
+  const cellSize = size / maxDim
+
+  const width = cols * cellSize
+  const height = rows * cellSize
+
+  return (
+    <View
+      style={{
+        width,
+        height,
+        backgroundColor: '#fff',
+        borderWidth: 0,
+        borderColor: '#111',
+      }}
+    >
+      {puzzle.tiles.flatMap((row, r) =>
+        row.map((cell, c) => {
+          if (cell.type === 'blank') {
+            return (
+              <View
+                key={`${r}-${c}`}
+                style={{
+                  position: 'absolute',
+                  top: r * cellSize,
+                  left: c * cellSize,
+                  width: cellSize,
+                  height: cellSize,
+                  backgroundColor: '#111',
+                }}
+              />
+            )
+          }
+          return null
+        })
+      )}
+    </View>
+  )
+})
+MiniGrid.displayName = 'MiniGrid'
+
+export function PuzzleCard({
+  id,
+  state,
+  removePuzzle,
+  onPress,
+}: PuzzleCardProps) {
   const { puzzle } = state
   const status = getCompletionStatus(state)
   const statusConfig = STATUS_CONFIG[status]
@@ -55,7 +110,7 @@ export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
       activeOpacity={0.7}
     >
       <View style={styles.thumbnail}>
-        <View style={styles.thumbnailGrid} />
+        <MiniGrid puzzle={puzzle} />
       </View>
       <View style={styles.info}>
         {title ? (
@@ -71,22 +126,27 @@ export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
             by {author}
           </Text>
         ) : null}
-        <View style={styles.tags}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{getSizeLabel(rows, cols)}</Text>
-          </View>
-          {date ? (
+        <View style={styles.bottom}>
+          <View style={styles.tags}>
             <View style={styles.tag}>
-              <Text style={[styles.tagText, { color: '#e87756' }]}>
-                {formatDate(date)}
+              <Text style={styles.tagText}>{getSizeLabel(rows, cols)}</Text>
+            </View>
+            {date ? (
+              <View style={styles.tag}>
+                <Text style={[styles.tagText, { color: '#e87756' }]}>
+                  {formatDate(date)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.tag}>
+              <Text style={[styles.tagText, { color: statusConfig.color }]}>
+                {statusConfig.label}
               </Text>
             </View>
-          ) : null}
-          <View style={styles.tag}>
-            <Text style={[styles.tagText, { color: statusConfig.color }]}>
-              {statusConfig.label}
-            </Text>
           </View>
+          <TouchableOpacity hitSlop={10} onPress={() => removePuzzle(id)}>
+            <Ionicons name="trash" size={16} />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -146,6 +206,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
+  },
+  bottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   tagText: {
     fontSize: 11,

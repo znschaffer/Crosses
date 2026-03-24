@@ -38,12 +38,6 @@ const MIN_CELL_SIZE = 20
 const MAX_CELL_SIZE = 84
 const SYNC_DEBOUNCE_MS = 700
 
-const runtimeExtra = Boolean(
-  (Constants.expoConfig?.extra as any)?.devToolsEnabled ??
-  (Constants.manifest as any)?.extra?.devToolsEnabled
-)
-const showDevTools = __DEV__ || runtimeExtra
-
 const onReset = (
   total: number,
   width: number,
@@ -407,17 +401,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
 
   const headerHeight = useHeaderHeight()
 
-  const toggleDevComplete = useCallback(() => {
-    const complete = !gridState.isPuzzleComplete
-
-    dispatch({ type: 'SET_PUZZLE_COMPLETE', complete })
-    pauseFocusSession()
-    updateActivePuzzleRef.current({
-      complete,
-      finishedAt: complete ? new Date().toISOString() : null,
-    })
-  }, [dispatch, gridState, pauseFocusSession])
-
   return (
     <KeyboardAvoidingView
       style={styles.kavContainer}
@@ -437,20 +420,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
               router.push('/(tabs)')
             }}
           />
-        )}
-
-        {showDevTools && (
-          <TouchableOpacity
-            onPress={toggleDevComplete}
-            style={[
-              styles.devToggle,
-              gridState.isPuzzleComplete ? styles.devToggleActive : null,
-            ]}
-          >
-            <Text style={styles.devToggleText}>
-              {gridState.isPuzzleComplete ? 'DEV: Reset' : 'DEV: Complete'}
-            </Text>
-          </TouchableOpacity>
         )}
 
         {/* Horizontal scroll for wide puzzles; vertical scroll disabled */}
@@ -576,22 +545,4 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   completionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  devToggle: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    zIndex: 9999,
-  },
-  devToggleActive: {
-    backgroundColor: '#aa3333',
-  },
-  devToggleText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
 })
