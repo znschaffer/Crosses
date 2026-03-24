@@ -64,7 +64,7 @@ export default function GridScreen() {
               fontWeight: '600',
               padding: 12,
               color: '#111',
-              fontVariant: ['tabular-nums'], // Keeps timer width steady
+              fontVariant: ['tabular-nums'],
             }}
           >
             {label}

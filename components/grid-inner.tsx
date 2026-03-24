@@ -222,7 +222,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const cellSize = useMemo(() => {
     if (!gridAreaSize) return MIN_CELL_SIZE
 
-    // Force the grid to fit within ~55% of screen height to leave room for keyboard
     const safeHeight = Math.min(
       gridAreaSize.h,
       Dimensions.get('window').height * 0.43
