@@ -1,5 +1,6 @@
 import { ProfileHeader } from '@/components/profileHeader'
 import { ProfileStat } from '@/components/profileStat'
+import { usePuzzle } from '@/contexts/PuzzleContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useEffect, useState } from 'react'
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
@@ -10,9 +11,10 @@ import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native'
  */
 export default function ProfileScreen() {
   // local initial state for settings
-  const [autoCheck, setAutoCheck] = useState(false)
-  const [timer, setTimer] = useState(false)
-  const [hints, setHints] = useState(false)
+  const { state, setSettings } = usePuzzle()
+  const timer = state.settings.timerEnabled
+  const autoCheck = state.settings.autoCheckEnabled
+  const hints = state.settings.hintsEnabled
 
   // local initial state for streak
   const [streak, setStreak] = useState(10)
@@ -24,10 +26,17 @@ export default function ProfileScreen() {
   const [firstName, setFirstName] = useState('Jane')
   const [lastName, setLastName] = useState('Doe')
 
-  // Functions to toggle settings (Need to be wired)
-  const toggleAutoCheck = () => setAutoCheck((prev) => !prev)
-  const toggleTimer = () => setTimer((prev) => !prev)
-  const toggleHints = () => setHints((prev) => !prev)
+  const toggleTimer = async () => {
+    setSettings({ timerEnabled: !timer })
+  }
+
+  const toggleAutoCheck = async () => {
+    setSettings({ autoCheckEnabled: !autoCheck })
+  }
+
+  const toggleHints = async () => {
+    setSettings({ hintsEnabled: !hints })
+  }
 
   // Hook to grab saved profile data from Async Storage
   useEffect(() => {

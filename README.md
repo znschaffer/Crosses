@@ -28,7 +28,8 @@ The app allows users to import crossword puzzle files, solve them in an interact
 
 ### Import
 
-- Imports crossword `.puz` files
+- Imports local crossword `.puz` files
+- Downloads daily puzzles from The New Yorker
 - Parses puzzle content for play in the app
 - Supports previewing imported puzzle details before starting
 
@@ -164,3 +165,19 @@ ${{ github.head_ref || github.ref_name }}
 ```
 
 This allows the tema to test updated preview builds more easily during review.
+## Local Dev Proxy for The New Yorker (Web)
+
+Use this only for local web development (`web + __DEV__`) to avoid CORS when importing from The New Yorker.
+
+```bash
+# terminal 1
+npm run proxy:tny
+
+# optional, if not using localhost:8787
+EXPO_PUBLIC_TNY_PROXY_URL=http://localhost:8787
+# terminal 2
+npm run web
+```
+
+Then open Import and toggle **The New Yorker**.
+Production builds do not use this local proxy.

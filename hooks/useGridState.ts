@@ -4,7 +4,9 @@ import {
   buildWordMap,
   checkComplete,
   getGridDimensions,
+  getTileLetter,
   getWordIndices,
+  indexToRC,
   isBlank,
   retreatSelection,
 } from '@/utils/gridUtils'
@@ -83,19 +85,31 @@ function createReducer(
         const dir = state.selectedDirection
 
         const cellStates = state.cellStates.slice()
-        cellStates[idx] = { letter: action.letter, isCorrect: null }
+
+        const { r, c } = indexToRC(puzzle, idx)
+        const isCellCorrect = action.letter === getTileLetter(puzzle, r, c)
+        cellStates[idx] = { letter: action.letter, isCorrect: isCellCorrect }
 
         const isPuzzleComplete = checkComplete(cellStates, puzzle)
 
+        const currentWordCells = getWordIndices(r, c, dir, puzzle)
+
+        const emptyCellsInWord = currentWordCells.filter(
+          (i) => !cellStates[i]?.letter
+        )
+
         let nextIndex = idx
-        const inWord = advanceInWord(idx, dir, puzzle)
-        if (inWord !== idx) {
-          nextIndex = inWord
+
+        if (emptyCellsInWord.length > 0) {
+          const inWord = advanceInWord(idx, dir, puzzle)
+          if (inWord !== idx && !cellStates[inWord]?.letter) {
+            nextIndex = inWord
+          } else {
+            nextIndex = emptyCellsInWord[0]
+          }
         } else {
           const currentClueNum =
-            dir === 'across'
-              ? wordMap.acrossClue[Math.floor(idx / width)][idx % width]
-              : wordMap.downClue[Math.floor(idx / width)][idx % width]
+            dir === 'across' ? wordMap.acrossClue[r][c] : wordMap.downClue[r][c]
 
           const clueList =
             dir === 'across' ? puzzle.clues?.across : puzzle.clues?.down

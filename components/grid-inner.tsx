@@ -14,6 +14,9 @@ import Constants from 'expo-constants'
 import { router } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  AppState,
+  AppStateStatus,
+  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   LayoutChangeEvent,
@@ -34,12 +37,6 @@ import CompletionModal from './completion-modal'
 const MIN_CELL_SIZE = 20
 const MAX_CELL_SIZE = 84
 const SYNC_DEBOUNCE_MS = 700
-
-const runtimeExtra = Boolean(
-  (Constants.expoConfig?.extra as any)?.devToolsEnabled ??
-  (Constants.manifest as any)?.extra?.devToolsEnabled
-)
-const showDevTools = __DEV__ || runtimeExtra
 
 const onReset = (
   total: number,
@@ -67,6 +64,8 @@ const onReset = (
     complete: false,
     finishedAt: null,
     startedAt: new Date().toISOString(),
+    activeMs: 0,
+    focusStartedAt: null,
   })
 }
 
@@ -99,10 +98,39 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     buildInitialState(puzzleState, total)
   )
 
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState)
+  const isInputFocusedRef = useRef(false)
+
+  const startFocusSession = useCallback(() => {
+    if (puzzleState.complete === true) return
+    const now = new Date().toISOString()
+    if (!puzzleState.focusStartedAt) {
+      updateActivePuzzleRef.current({ focusStartedAt: now })
+    }
+  }, [puzzleState.complete, puzzleState.focusStartedAt])
+
+  const pauseFocusSession = useCallback(() => {
+    if (puzzleState.focusStartedAt) {
+      const now = Date.now()
+      const started = new Date(puzzleState.focusStartedAt).getTime()
+      const delta = Math.max(0, now - started)
+      const newActive = (puzzleState.activeMs ?? 0) + delta
+      updateActivePuzzleRef.current({
+        activeMs: newActive,
+        focusStartedAt: null,
+      })
+    }
+  }, [puzzleState.focusStartedAt, puzzleState.activeMs])
+
   const gridStateRef = useRef(gridState)
   useEffect(() => {
     gridStateRef.current = gridState
   }, [gridState])
+
+  const updateActivePuzzleRef = useRef(updateActivePuzzle)
+  useEffect(() => {
+    updateActivePuzzleRef.current = updateActivePuzzle
+  }, [updateActivePuzzle])
 
   const puzzleIdRef = useRef(getPuzzleId(puzzle))
 
@@ -130,6 +158,18 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const SENTINEL = 'a'
   const isHandlingBackspaceRef = useRef(false)
   const [showCompletionModal, setShowCompletionModal] = useState<boolean>(false)
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      appStateRef.current = next
+      if (next.match(/inactive|background/)) {
+        pauseFocusSession()
+      } else if (next === 'active') {
+        if (isInputFocusedRef.current) startFocusSession()
+      }
+    })
+    return () => sub.remove()
+  }, [startFocusSession, pauseFocusSession])
 
   useFocusEffect(
     useCallback(() => {
@@ -167,6 +207,7 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     w: number
     h: number
   } | null>(null)
+
   const onGridAreaLayout = useCallback((e: LayoutChangeEvent) => {
     const { width: w, height: h } = e.nativeEvent.layout
     setGridAreaSize({ w, h })
@@ -175,8 +216,13 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
   const cellSize = useMemo(() => {
     if (!gridAreaSize) return MIN_CELL_SIZE
 
+    const safeHeight = Math.min(
+      gridAreaSize.h,
+      Dimensions.get('window').height * 0.43
+    )
+
     const cellFromWidth = gridAreaSize.w / Math.max(1, width)
-    const cellFromHeight = gridAreaSize.h / Math.max(1, height)
+    const cellFromHeight = safeHeight / Math.max(1, height)
     const exact = Math.min(cellFromWidth, cellFromHeight)
 
     return Math.max(MIN_CELL_SIZE, Math.min(MAX_CELL_SIZE, exact))
@@ -210,25 +256,40 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
       isInitialMount.current = false
       return
     }
+
+    const newAnswers = gridState.cellStates.map((s) => s.letter)
+    const currentAnswers = Array.isArray(puzzleState.userAnswers)
+      ? puzzleState.userAnswers
+      : []
+
+    const answersSame =
+      currentAnswers.length === newAnswers.length &&
+      currentAnswers.every((a, i) => a === newAnswers[i])
+    const indexSame = puzzleState.currentIndex === gridState.selectedIndex
+    const dirSame = puzzleState.direction === gridState.selectedDirection
+
+    if (answersSame && indexSame && dirSame) return
+
     const timer = setTimeout(() => {
-      updateActivePuzzle({
+      updateActivePuzzleRef.current({
         userAnswers: gridState.cellStates.map((s) => s.letter),
         currentIndex: gridState.selectedIndex,
         direction: gridState.selectedDirection,
       })
     }, SYNC_DEBOUNCE_MS)
     return () => clearTimeout(timer)
-  }, [gridState, updateActivePuzzle])
+  }, [gridState, puzzleState])
 
   useEffect(() => {
     return () => {
-      updateActivePuzzle({
+      pauseFocusSession()
+      updateActivePuzzleRef.current({
         userAnswers: gridStateRef.current.cellStates.map((s) => s.letter),
         currentIndex: gridStateRef.current.selectedIndex,
         direction: gridStateRef.current.selectedDirection,
       })
     }
-  }, [updateActivePuzzle])
+  }, [pauseFocusSession])
 
   const prevCompleteRef = useRef<boolean>(false)
   useEffect(() => {
@@ -237,14 +298,15 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
 
     if (!wasComplete && isCompleteNow) {
       const now = new Date().toISOString()
-      updateActivePuzzle({
+      pauseFocusSession()
+      updateActivePuzzleRef.current({
         complete: true,
         finishedAt: now,
         userAnswers: gridState.cellStates.map((s) => s.letter),
       })
     }
     prevCompleteRef.current = isCompleteNow
-  }, [gridState.isPuzzleComplete, gridState.cellStates, updateActivePuzzle])
+  }, [gridState.isPuzzleComplete, gridState.cellStates, pauseFocusSession])
 
   const handleCellPress = useCallback(
     (idx: number) => {
@@ -327,17 +389,17 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
     [dispatch, gridState.selectedIndex, width]
   )
 
+  useFocusEffect(
+    useCallback(() => {
+      if (isInputFocusedRef.current && AppState.currentState === 'active')
+        startFocusSession()
+      return () => {
+        pauseFocusSession()
+      }
+    }, [startFocusSession, pauseFocusSession])
+  )
+
   const headerHeight = useHeaderHeight()
-
-  const toggleDevComplete = useCallback(() => {
-    const complete = !gridState.isPuzzleComplete
-
-    dispatch({ type: 'SET_PUZZLE_COMPLETE', complete })
-    updateActivePuzzle({
-      complete,
-      finishedAt: complete ? new Date().toISOString() : null,
-    })
-  }, [dispatch, gridState, updateActivePuzzle])
 
   return (
     <KeyboardAvoidingView
@@ -358,20 +420,6 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
               router.push('/(tabs)')
             }}
           />
-        )}
-
-        {showDevTools && (
-          <TouchableOpacity
-            onPress={toggleDevComplete}
-            style={[
-              styles.devToggle,
-              gridState.isPuzzleComplete ? styles.devToggleActive : null,
-            ]}
-          >
-            <Text style={styles.devToggleText}>
-              {gridState.isPuzzleComplete ? 'DEV: Reset' : 'DEV: Complete'}
-            </Text>
-          </TouchableOpacity>
         )}
 
         {/* Horizontal scroll for wide puzzles; vertical scroll disabled */}
@@ -444,6 +492,14 @@ export default function GridInner({ puzzleState, onNavigateClue }: Props) {
               keyboardType="default"
               onChangeText={handleChangeText}
               onKeyPress={handleKeyPress}
+              onFocus={() => {
+                isInputFocusedRef.current = true
+                startFocusSession()
+              }}
+              onBlur={() => {
+                isInputFocusedRef.current = false
+                pauseFocusSession()
+              }}
             />
           </View>
         </ScrollView>
@@ -489,22 +545,4 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   completionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  devToggle: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    zIndex: 9999,
-  },
-  devToggleActive: {
-    backgroundColor: '#aa3333',
-  },
-  devToggleText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-  },
 })
