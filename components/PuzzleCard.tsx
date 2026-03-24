@@ -1,4 +1,5 @@
 import { PuzzleState } from '@/types/PuzzleState.t'
+import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 type CompletionStatus = 'complete' | 'in-progress' | 'to-do'
@@ -38,6 +39,53 @@ interface PuzzleCardProps {
   onPress: (id: string) => void
 }
 
+const MiniGrid = React.memo(({ puzzle }: { puzzle: PuzzleState['puzzle'] }) => {
+  const rows = puzzle.tiles.length
+  const cols = puzzle.tiles[0]?.length ?? 0
+  if (rows === 0 || cols === 0) return null
+
+  const size = 60
+  const maxDim = Math.max(rows, cols)
+  const cellSize = size / maxDim
+
+  const width = cols * cellSize
+  const height = rows * cellSize
+
+  return (
+    <View
+      style={{
+        width,
+        height,
+        backgroundColor: '#fff',
+        borderWidth: 0,
+        borderColor: '#111',
+      }}
+    >
+      {puzzle.tiles.flatMap((row, r) =>
+        row.map((cell, c) => {
+          if (cell.type === 'blank') {
+            return (
+              <View
+                key={`${r}-${c}`}
+                style={{
+                  position: 'absolute',
+                  top: r * cellSize,
+                  left: c * cellSize,
+                  width: cellSize,
+                  height: cellSize,
+                  backgroundColor: '#111',
+                }}
+              />
+            )
+          }
+          return null
+        })
+      )}
+    </View>
+  )
+})
+MiniGrid.displayName = 'MiniGrid'
+
 export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
   const { puzzle } = state
   const status = getCompletionStatus(state)
@@ -55,7 +103,7 @@ export function PuzzleCard({ id, state, onPress }: PuzzleCardProps) {
       activeOpacity={0.7}
     >
       <View style={styles.thumbnail}>
-        <View style={styles.thumbnailGrid} />
+        <MiniGrid puzzle={puzzle} />
       </View>
       <View style={styles.info}>
         {title ? (

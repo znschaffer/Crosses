@@ -9,8 +9,10 @@ export function usePuzzleLoader() {
       if (!fileData) return
       const puzzle = await extractPuzzleData(fileData.uri, fileData.name)
       loadPuzzleFile(puzzle.buffer)
+      return true
     } catch (error) {
       console.error('Error loading puzzle file: ', error)
+      return false
     }
   }
 

@@ -39,6 +39,7 @@ export default function GridScreen() {
           flex: 1,
           justifyContent: 'center',
         },
+        title: 'Grid',
         headerTitle: () => (
           <Pressable
             onPress={() => {

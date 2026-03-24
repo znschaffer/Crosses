@@ -10,6 +10,7 @@ import {
   type SyncSources,
 } from '@/services/syncSettings'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import { useNavigation, router } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { openBrowserAsync } from 'expo-web-browser'
 import { useEffect, useState } from 'react'
@@ -25,15 +26,47 @@ import {
 
 export default function ImportScreen() {
   const { handleLoadPuzzle } = usePuzzleLoader()
-  const { loadPuzzleFile, state } = usePuzzle()
+  const { activePuzzle, loadPuzzleFile, state } = usePuzzle()
   const [syncSources, setSyncSources] =
     useState<SyncSources>(DEFAULT_SYNC_SOURCES)
   const [syncSourcesLoaded, setSyncSourcesLoaded] = useState(false)
   const [alert, setAlert] = useState<TimedAlertState | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const navigation = useNavigation()
 
   const showAlert = (message: string, tone: TimedAlertState['tone']) => {
     setAlert({ id: Date.now(), message, tone })
   }
+
+  useEffect(() => {
+    if (showSuccess) {
+      navigation.setOptions({
+        headerLeft: () => (
+          <TouchableOpacity
+            onPress={() => setShowSuccess(false)}
+            hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+            style={{
+              marginLeft: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <Ionicons name="chevron-back" size={24} color="#1976D2" />
+            <Text style={{ fontSize: 16, color: '#1976D2', fontWeight: '500' }}>
+              Import
+            </Text>
+          </TouchableOpacity>
+        ),
+        title: 'Imported!',
+      })
+    } else {
+      navigation.setOptions({
+        headerLeft: undefined,
+        title: 'Import',
+      })
+    }
+  }, [showSuccess, navigation])
 
   useEffect(() => {
     const hydrateSyncSources = async () => {
@@ -77,6 +110,67 @@ export default function ImportScreen() {
     }
   }
 
+  if (showSuccess && activePuzzle?.puzzle) {
+    const { puzzle } = activePuzzle
+    const title = puzzle.meta?.title ?? 'Untitled'
+    const author = puzzle.meta?.author ?? ''
+    const acrossClues = Array.isArray(puzzle.clues?.across)
+      ? puzzle.clues.across
+      : []
+    const downClues = Array.isArray(puzzle.clues?.down) ? puzzle.clues.down : []
+    const clueCount = acrossClues.length + downClues.length
+
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+      >
+        <View style={styles.infoBox}>
+          <View style={{ alignItems: 'center', gap: 4 }}>
+            <Text style={styles.puzzleTitle}>{title}</Text>
+            {!!author && <Text style={styles.puzzleAuthor}>{author}</Text>}
+          </View>
+
+          <View style={styles.puzzleStats}>
+            <View style={styles.puzzleStat}>
+              <Text style={styles.puzzleStatValue}>{clueCount}</Text>
+              <Text style={styles.puzzleStatText}>CLUES</Text>
+            </View>
+            <View style={styles.puzzleStat}>
+              <Text style={styles.puzzleStatValue}>
+                ~{Math.floor(clueCount * 0.2)}
+              </Text>
+              <Text style={styles.puzzleStatText}>MIN EST.</Text>
+            </View>
+          </View>
+
+          <View style={styles.puzzleClues}>
+            <Text style={{ fontSize: 12, fontWeight: '700' }}>A Few Clues</Text>
+            {acrossClues.slice(0, 6).map((clue) => (
+              <View style={styles.puzzleClue} key={clue.number}>
+                <Text style={styles.puzzleClueNumber}>{clue.number}</Text>
+                <Text style={styles.puzzleClueText}>{clue.body}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.startPuzzleButton}
+          onPress={() => {
+            setShowSuccess(false)
+            router.navigate('/(tabs)/grid')
+          }}
+        >
+          <Ionicons color="#fff" name="play" />
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '500' }}>
+            Start Puzzle
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    )
+  }
+
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.safeArea}>
@@ -114,7 +208,9 @@ export default function ImportScreen() {
             </Text>
             <TouchableOpacity
               style={styles.importButton}
-              onPress={handleLoadPuzzle}
+              onPress={async () =>
+                (await handleLoadPuzzle()) && setShowSuccess(true)
+              }
             >
               <Text style={styles.importButtonText}> Browse Files</Text>
             </TouchableOpacity>
@@ -299,4 +395,44 @@ const styles = StyleSheet.create({
     gap: '8',
     width: '100%',
   },
+  startPuzzleButton: {
+    backgroundColor: '#e87756',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  puzzleTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0a0a0a',
+    textAlign: 'center',
+  },
+  puzzleAuthor: { fontSize: 14, fontWeight: '400', color: '#4a5565' },
+  puzzleStats: { flexDirection: 'row', gap: 24 },
+  puzzleStat: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  puzzleStatValue: { fontWeight: '700', fontSize: 30, textAlign: 'center' },
+  puzzleStatText: { fontSize: 12, color: '#4a5565', textAlign: 'center' },
+  puzzleClues: {
+    alignSelf: 'stretch',
+    borderRadius: 16,
+    padding: 16,
+    gap: 16,
+    backgroundColor: '#f9fafb',
+  },
+  puzzleClue: { flexDirection: 'row', gap: 14 },
+  puzzleClueNumber: {
+    color: '#e87756',
+    width: 24,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  puzzleClueText: { fontSize: 14, color: '#101828', flex: 1 },
+  contentContainer: { justifyContent: 'center', gap: 24, padding: 24 },
 })
