@@ -19,3 +19,13 @@ export function formatElapsedTime(startedAt?: string): string {
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
+
+export function formatMsAsClock(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000))
+  const s = totalSeconds % 60
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const h = Math.floor(totalSeconds / 3600)
+  const two = (n: number) => String(n).padStart(2, '0')
+  if (h > 0) return `${h}:${two(m)}:${two(s)}`
+  return `${m}:${two(s)}`
+}

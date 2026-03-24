@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { usePuzzle } from '@/contexts/PuzzleContext'
+import { useEffect, useState } from 'react'
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
+import { formatMsAsClock } from '@/utils/time'
 
 /**
  * @typedef {Object} ProfileStatProps
@@ -14,9 +16,35 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native'
  */
 export function ProfileStat({ streak, setStreak }: any) {
   // local initial state for stats
-  const [puzzlesCompleted, setPuzzlesCompleted] = useState(100)
-  const [averageTime, setAverageTime] = useState('18:42')
+  const { state } = usePuzzle()
+
+  const [puzzlesCompleted, setPuzzlesCompleted] = useState(0)
+  const [averageTime, setAverageTime] = useState(0)
   const [bestStreak, setBestStreak] = useState(10)
+
+  useEffect(() => {
+    const completedCount = Object.entries(state.puzzles).reduce(
+      (prev, curr) => {
+        if (curr[1].complete) {
+          return prev + 1
+        } else {
+          return prev
+        }
+      },
+      0
+    )
+    setPuzzlesCompleted(completedCount)
+
+    const avgTime = Object.entries(state.puzzles).reduce((prev, curr) => {
+      if (curr[1].complete) {
+        return prev + curr[1].activeMs
+      } else {
+        return prev
+      }
+    }, 0)
+
+    setAverageTime(completedCount > 0 ? avgTime / completedCount : 0)
+  }, [state])
 
   // function to reset stats
   const handleResetStats = () => {
@@ -29,8 +57,11 @@ export function ProfileStat({ streak, setStreak }: any) {
           text: 'Reset',
           style: 'destructive',
           onPress: () => {
+            Object.entries(state.puzzles).forEach((p) => {
+              p[1].complete = false
+            })
             setPuzzlesCompleted(0)
-            setAverageTime('00:00')
+            setAverageTime(0)
             setBestStreak(0)
             setStreak(0)
           },
@@ -48,7 +79,7 @@ export function ProfileStat({ streak, setStreak }: any) {
 
       <View style={styles.statsRow}>
         <Text>Average Time</Text>
-        <Text style={styles.statValue}>{averageTime}</Text>
+        <Text style={styles.statValue}>{formatMsAsClock(averageTime)}</Text>
       </View>
 
       <View style={styles.statsRow}>
